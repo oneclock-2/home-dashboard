@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우리집 스마트 알림판</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 배경 사진 슬라이드 영역 -->
+    <div class="bg-slideshow">
+        <div class="slide active" style="background-image: url('https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=1920&auto=format&fit=crop');"></div>
+        <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1609220136736-443140cffec6?q=80&w=1920&auto=format&fit=crop');"></div>
+    </div>
+    <div class="bg-overlay"></div>
+
+    <!-- 상단 확인된 체크리스트 영역 -->
+    <div class="top-checklist-bar" id="checklistBar">
+        <div class="checklist-title">📋 확인한 알림 사항</div>
+        <div class="checklist-items" id="checklistItems"></div>
+    </div>
+
+    <!-- 메인 화면 (대기 상태) -->
+    <div class="main-idle-content">
+        <div class="clock" id="clock">00:00</div>
+        <div class="status-badge">🟢 알림 수신 대기 중...</div>
+    </div>
+
+    <!-- 메시지 도착 시 뜨는 검정 화면 팝업 -->
+    <div class="modal-backdrop" id="messageModal">
+        <div class="modal-content">
+            <div class="modal-tag">🔔 새로운 태스크 알림</div>
+            <div class="modal-message" id="modalMessageText">메시지 내용이 여기에 크게 표시됩니다.</div>
+            <button class="confirm-btn" id="confirmBtn">확인 완료</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

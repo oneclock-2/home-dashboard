@@ -1,0 +1,15 @@
+{
+  "name": "우리집 스마트 알림판",
+  "short_name": "집알림판",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F9FC",
+  "theme_color": "#A3C1AD",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3176/3176363.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
