@@ -38,7 +38,6 @@ body, html {
     z-index: 2;
 }
 
-/* 포스트잇 컨테이너 */
 .sticky-notes-container {
     position: absolute;
     top: 180px;
@@ -53,13 +52,12 @@ body, html {
     z-index: 4;
 }
 
-/* 포스트잇 크기 및 글씨 크기 2배 확대 */
 .sticky-note {
     pointer-events: auto;
-    width: 480px; /* 240px -> 480px (2배) */
+    width: 480px;
     background: #FEF08A;
     color: #1E293B;
-    padding: 28px; /* 패딩 확대 */
+    padding: 28px;
     border-radius: 12px;
     box-shadow: 0 15px 35px rgba(0,0,0,0.4);
     position: relative;
@@ -77,13 +75,8 @@ body, html {
     border-top-color: #FB923C;
 }
 
-.sticky-note:hover {
-    transform: scale(1.03) rotate(0deg);
-    z-index: 5;
-}
-
 .sticky-note-text {
-    font-size: 32px; /* 16px -> 32px (2배 확대) */
+    font-size: 32px;
     font-weight: 700;
     line-height: 1.4;
     word-break: keep-all;
@@ -94,7 +87,7 @@ body, html {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 22px; /* 11px -> 22px (2배 확대) */
+    font-size: 22px;
     color: #64748B;
     border-top: 2px dashed rgba(0,0,0,0.15);
     padding-top: 14px;
@@ -106,16 +99,390 @@ body, html {
     color: #EF4444;
     font-weight: bold;
     cursor: pointer;
-    font-size: 24px; /* 13px -> 24px (2배 확대) */
+    font-size: 24px;
     padding: 4px 10px;
     border-radius: 6px;
 }
 
-.sticky-note-delete:hover {
-    background: rgba(239, 68, 68, 0.15);
+/* 로그 입력 트리거 버튼 */
+.log-trigger-btn {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    background: rgba(59, 130, 246, 0.9);
+    color: white;
+    border: none;
+    padding: 16px 28px;
+    font-size: 22px;
+    font-weight: 800;
+    border-radius: 30px;
+    cursor: pointer;
+    z-index: 20;
+    box-shadow: 0 6px 25px rgba(59, 130, 246, 0.5);
+    backdrop-filter: blur(5px);
+    transition: transform 0.1s ease;
 }
 
-/* 우측 상단 날씨 위젯 */
+.log-trigger-btn:active {
+    transform: scale(0.95);
+}
+
+/* 로그 패널 */
+.log-panel {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 680px;
+    height: 82vh;
+    background: rgba(15, 23, 42, 0.96);
+    backdrop-filter: blur(16px);
+    border-top-left-radius: 24px;
+    border-left: 2px solid rgba(255,255,255,0.1);
+    border-top: 2px solid rgba(255,255,255,0.1);
+    z-index: 50;
+    display: none;
+    flex-direction: column;
+    box-shadow: -10px 0 40px rgba(0,0,0,0.6);
+    padding: 24px;
+}
+
+.log-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    font-size: 20px;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+}
+
+.log-header-btns {
+    display: flex;
+    gap: 10px;
+}
+
+.log-report-btn {
+    background: #3B82F6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.log-report-btn:hover {
+    background: #2563EB;
+}
+
+.log-close-btn {
+    background: #EF4444;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.log-wizard-area {
+    background: rgba(255,255,255,0.05);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wizard-step-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wizard-step-title {
+    color: #93C5FD;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+/* 뒤로 가기 소형 버튼 */
+.wizard-back-btn {
+    background: rgba(255, 255, 255, 0.15);
+    color: #E2E8F0;
+    border: none;
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+}
+.wizard-back-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.wizard-pills-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.wizard-pill {
+    background: #E0F2FE;
+    color: #0369A1;
+    border: none;
+    padding: 10px 18px;
+    font-size: 16px;
+    font-weight: 700;
+    border-radius: 30px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.1s ease;
+}
+
+.wizard-pill:hover {
+    transform: scale(1.05);
+}
+
+/* 대상자별 지정 색상 스타일 */
+.pill-yoonwoo { background: #BFDBFE; color: #1E3A8A; } /* 윤우: 파란색 */
+.pill-yoonseo { background: #FBCFE8; color: #831843; } /* 윤서: 핑크색 */
+.pill-parent { background: #F8FAFC; color: #0F172A; border: 1px solid #CBD5E1; } /* 엄마/아빠: 흰색 */
+
+/* 해열제 종류 선택 전용 테마 스타일 버튼 */
+.pill-med-acet {
+    background: #FEE2E2 !important;
+    color: #991B1B !important;
+    border: 2px solid #EF4444 !important;
+}
+.pill-med-ibu {
+    background: #FEF9C3 !important;
+    color: #713F12 !important;
+    border: 2px solid #CA8A04 !important;
+}
+
+.log-list-area {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 4px;
+}
+
+.log-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.log-item.fever-reducer {
+    background: #FFEDD5;
+    color: #9A3412;
+    border-left: 6px solid #F97316;
+}
+
+.log-item.temperature {
+    background: #E0F2FE;
+    color: #0369A1;
+    border-left: 6px solid #0284C7;
+}
+
+.log-item.push-log {
+    background: #F1F5F9;
+    color: #334155;
+    border-left: 6px solid #64748B;
+}
+
+/* 아세트: 붉은색 배경과 글씨 계열 스타일 */
+.med-acet {
+    background: #EF4444;
+    color: #FFFFFF;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: 900;
+    border: 1px solid #B91C1C;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);
+}
+
+/* 부르펜: 농도 누런 하얀색 배경과 검정 글씨 스타일 */
+.med-ibu {
+    background: #FEF3C7;
+    color: #111827;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: 900;
+    border: 1px solid #E5E7EB;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.log-item-delete {
+    background: none;
+    border: none;
+    color: #EF4444;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+/* 전체화면 리포트 모달 스타일 */
+.report-modal-backdrop {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(10, 10, 10, 0.95);
+    z-index: 200;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.report-modal-backdrop.active {
+    display: flex;
+}
+
+.report-modal-content {
+    background: #1E293B;
+    width: 100%;
+    height: 100%;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    border-bottom: 2px solid rgba(255,255,255,0.1);
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+.report-header h2 {
+    font-size: 28px;
+    font-weight: 800;
+    color: #F8FAFC;
+}
+
+.report-close-btn {
+    background: #EF4444;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.report-body {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-right: 10px;
+}
+
+.report-timeline-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.report-person-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #93C5FD;
+    border-bottom: 1px dashed rgba(255,255,255,0.15);
+    padding-bottom: 10px;
+}
+
+.report-columns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.report-date-column {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.report-date-header {
+    font-size: 18px;
+    font-weight: 700;
+    color: #FACC15;
+    border-bottom: 1px solid rgba(250, 204, 21, 0.3);
+    padding-bottom: 8px;
+    text-align: center;
+}
+
+.timeline-events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.timeline-row {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 17px;
+    color: #E2E8F0;
+    justify-content: space-between;
+}
+
+.timeline-time {
+    font-weight: 700;
+    color: #38BDF8;
+    width: 90px;
+}
+
+.timeline-content {
+    flex: 1;
+    font-weight: 600;
+}
+
+.timeline-interval {
+    font-size: 13px;
+    color: #94A3B8;
+    background: rgba(0,0,0,0.4);
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-weight: 600;
+}
+
+/* 날씨 위젯 */
 .top-weather-widget {
     position: absolute;
     top: 20px;
@@ -167,7 +534,6 @@ body, html {
     text-align: right;
 }
 
-/* 상단 체크리스트 바 */
 .top-checklist-bar {
     position: absolute;
     top: 20px;
@@ -238,10 +604,6 @@ body, html {
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.postit-btn:hover {
-    background: #FDE047;
-}
-
 .check-item button.delete-btn {
     background: none;
     border: none;
@@ -252,7 +614,7 @@ body, html {
     padding: 4px 8px;
 }
 
-/* 메인 시계 */
+/* 메인 시계 및 크레딧 문구 스타일 */
 .main-idle-content {
     position: absolute;
     bottom: 40px;
@@ -269,19 +631,35 @@ body, html {
     line-height: 1;
 }
 
+.status-badge-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 16px;
+}
+
 .status-badge {
     display: inline-block;
-    margin-top: 16px;
     background: rgba(163, 193, 173, 0.9);
     color: #12261E;
-    padding: 12px 24px;
+    padding: 10px 22px;
     border-radius: 30px;
-    font-size: 36px;
+    font-size: 32px;
     font-weight: 700;
     backdrop-filter: blur(5px);
 }
 
-/* 알림 팝업 모달 전체 및 내부 요소 3배 확대 */
+.dad-credit-large {
+    font-size: 18px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.65);
+    letter-spacing: 0.8px;
+    margin-left: 6px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+
+/* 알림 팝업 모달 */
 .modal-backdrop {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -300,7 +678,6 @@ body, html {
     pointer-events: auto;
 }
 
-/* 팝업 모달 넓이 및 패딩 3배급 최댓값 지정 */
 .modal-content {
     text-align: center;
     width: 98%;
@@ -312,7 +689,6 @@ body, html {
     justify-content: center;
 }
 
-/* 태그 타이틀 글씨 크기 3배 (24px -> 72px) */
 .modal-tag {
     color: #F87171;
     font-size: 72px;
@@ -338,7 +714,6 @@ body, html {
     text-align: left;
 }
 
-/* 번쩍이는 카드 영역 크기 및 테두리 3배 확대 */
 @keyframes urgentFlash {
     0% {
         background: rgba(185, 28, 28, 0.98);
@@ -359,23 +734,21 @@ body, html {
 
 .unconfirmed-card {
     background: rgba(185, 28, 28, 0.95);
-    border: 10px solid #FACC15; /* 테두리 3px -> 10px */
+    border: 10px solid #FACC15;
     border-radius: 30px;
-    padding: 50px; /* 패딩 3배 */
+    padding: 50px;
     display: flex;
     flex-direction: column;
     gap: 30px;
     animation: urgentFlash 1s infinite ease-in-out;
 }
 
-/* 수신 시각 폰트 3배 (14px -> 42px) */
 .unconfirmed-time {
     font-size: 42px;
     color: #FEF08A;
     font-weight: 800;
 }
 
-/* 메시지 글씨 크기 3배 (54px -> 120px 초대형) */
 .unconfirmed-msg {
     color: #FFFFFF;
     font-size: 110px;
@@ -385,13 +758,12 @@ body, html {
     text-shadow: 0 4px 20px rgba(0,0,0,0.8);
 }
 
-/* 확인 완료 버튼 3배 크기 확대 */
 .modal-confirm-btn {
     background-color: #FACC15;
     color: #713F12;
     border: none;
-    padding: 30px 80px; /* 버튼 패딩 3배 */
-    font-size: 50px; /* 버튼 글씨 18px -> 50px */
+    padding: 30px 80px;
+    font-size: 50px;
     font-weight: 900;
     border-radius: 60px;
     cursor: pointer;
