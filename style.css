@@ -38,7 +38,84 @@ body, html {
     z-index: 2;
 }
 
-/* 우측 상단 날씨 위젯 스타일 */
+/* 포스트잇 컨테이너 */
+.sticky-notes-container {
+    position: absolute;
+    top: 180px;
+    right: 20px;
+    bottom: 140px;
+    left: 420px;
+    pointer-events: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    align-content: flex-start;
+    z-index: 4;
+}
+
+/* 포스트잇 크기 및 글씨 크기 2배 확대 */
+.sticky-note {
+    pointer-events: auto;
+    width: 480px; /* 240px -> 480px (2배) */
+    background: #FEF08A;
+    color: #1E293B;
+    padding: 28px; /* 패딩 확대 */
+    border-radius: 12px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+    position: relative;
+    transform: rotate(-1.5deg);
+    transition: transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-top: 10px solid #FACC15;
+}
+
+.sticky-note:nth-child(even) {
+    transform: rotate(2deg);
+    background: #FFEDD5;
+    border-top-color: #FB923C;
+}
+
+.sticky-note:hover {
+    transform: scale(1.03) rotate(0deg);
+    z-index: 5;
+}
+
+.sticky-note-text {
+    font-size: 32px; /* 16px -> 32px (2배 확대) */
+    font-weight: 700;
+    line-height: 1.4;
+    word-break: keep-all;
+    margin-bottom: 20px;
+}
+
+.sticky-note-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 22px; /* 11px -> 22px (2배 확대) */
+    color: #64748B;
+    border-top: 2px dashed rgba(0,0,0,0.15);
+    padding-top: 14px;
+}
+
+.sticky-note-delete {
+    background: none;
+    border: none;
+    color: #EF4444;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 24px; /* 13px -> 24px (2배 확대) */
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+.sticky-note-delete:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+/* 우측 상단 날씨 위젯 */
 .top-weather-widget {
     position: absolute;
     top: 20px;
@@ -90,7 +167,7 @@ body, html {
     text-align: right;
 }
 
-/* 상단 체크리스트 바 (좌측 정렬) */
+/* 상단 체크리스트 바 */
 .top-checklist-bar {
     position: absolute;
     top: 20px;
@@ -143,7 +220,29 @@ body, html {
     color: #7F8C8D;
 }
 
-.check-item button {
+.item-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.postit-btn {
+    background: #FEF08A;
+    border: 1px solid #EAB308;
+    color: #713F12;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.postit-btn:hover {
+    background: #FDE047;
+}
+
+.check-item button.delete-btn {
     background: none;
     border: none;
     color: #E07A5F;
@@ -153,7 +252,7 @@ body, html {
     padding: 4px 8px;
 }
 
-/* 메인 화면 시계 및 대기 문구 (2배 확대) */
+/* 메인 시계 */
 .main-idle-content {
     position: absolute;
     bottom: 40px;
@@ -164,7 +263,7 @@ body, html {
 }
 
 .clock {
-    font-size: 192px; /* 2배 확대 (96px -> 192px) */
+    font-size: 192px;
     font-weight: 800;
     letter-spacing: -5px;
     line-height: 1;
@@ -177,16 +276,16 @@ body, html {
     color: #12261E;
     padding: 12px 24px;
     border-radius: 30px;
-    font-size: 36px; /* 2배 확대 (18px -> 36px) */
+    font-size: 36px;
     font-weight: 700;
     backdrop-filter: blur(5px);
 }
 
-/* 알림 팝업 모달 */
+/* 알림 팝업 모달 전체 및 내부 요소 3배 확대 */
 .modal-backdrop {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(10, 10, 10, 0.94);
+    background: rgba(10, 10, 10, 0.96);
     z-index: 100;
     display: flex;
     justify-content: center;
@@ -201,68 +300,106 @@ body, html {
     pointer-events: auto;
 }
 
+/* 팝업 모달 넓이 및 패딩 3배급 최댓값 지정 */
 .modal-content {
     text-align: center;
-    max-width: 800px;
-    width: 90%;
-    padding: 35px;
-    max-height: 85vh;
+    width: 98%;
+    height: 95vh;
+    max-height: 95vh;
+    padding: 60px;
     display: flex;
     flex-direction: column;
+    justify-content: center;
 }
 
+/* 태그 타이틀 글씨 크기 3배 (24px -> 72px) */
 .modal-tag {
-    color: #F4A261;
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 20px;
-    letter-spacing: 1px;
+    color: #F87171;
+    font-size: 72px;
+    font-weight: 900;
+    margin-bottom: 40px;
+    letter-spacing: 4px;
     text-transform: uppercase;
+    animation: textBlink 0.8s infinite alternate;
+}
+
+@keyframes textBlink {
+    0% { opacity: 0.5; transform: scale(0.98); }
+    100% { opacity: 1; transform: scale(1.02); }
 }
 
 .unconfirmed-container {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 40px;
     overflow-y: auto;
-    max-height: 65vh;
-    padding-right: 4px;
+    max-height: 75vh;
+    padding: 10px;
     text-align: left;
 }
 
+/* 번쩍이는 카드 영역 크기 및 테두리 3배 확대 */
+@keyframes urgentFlash {
+    0% {
+        background: rgba(185, 28, 28, 0.98);
+        box-shadow: 0 0 80px rgba(239, 68, 68, 1);
+        border-color: #FCA5A5;
+    }
+    50% {
+        background: rgba(20, 20, 20, 0.98);
+        box-shadow: 0 0 160px rgba(250, 204, 21, 1);
+        border-color: #FACC15;
+    }
+    100% {
+        background: rgba(185, 28, 28, 0.98);
+        box-shadow: 0 0 80px rgba(239, 68, 68, 1);
+        border-color: #FCA5A5;
+    }
+}
+
 .unconfirmed-card {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 14px;
-    padding: 20px;
+    background: rgba(185, 28, 28, 0.95);
+    border: 10px solid #FACC15; /* 테두리 3px -> 10px */
+    border-radius: 30px;
+    padding: 50px; /* 패딩 3배 */
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 30px;
+    animation: urgentFlash 1s infinite ease-in-out;
 }
 
+/* 수신 시각 폰트 3배 (14px -> 42px) */
 .unconfirmed-time {
-    font-size: 13px;
-    color: #A3C1AD;
-    font-weight: 600;
+    font-size: 42px;
+    color: #FEF08A;
+    font-weight: 800;
 }
 
+/* 메시지 글씨 크기 3배 (54px -> 120px 초대형) */
 .unconfirmed-msg {
     color: #FFFFFF;
-    font-size: 32px;
-    font-weight: 700;
-    line-height: 1.3;
+    font-size: 110px;
+    font-weight: 900;
+    line-height: 1.2;
     word-break: keep-all;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.8);
 }
 
+/* 확인 완료 버튼 3배 크기 확대 */
 .modal-confirm-btn {
-    background-color: #A3C1AD;
-    color: #12261E;
+    background-color: #FACC15;
+    color: #713F12;
     border: none;
-    padding: 12px 28px;
-    font-size: 16px;
-    font-weight: 700;
-    border-radius: 24px;
+    padding: 30px 80px; /* 버튼 패딩 3배 */
+    font-size: 50px; /* 버튼 글씨 18px -> 50px */
+    font-weight: 900;
+    border-radius: 60px;
     cursor: pointer;
     align-self: flex-end;
-    box-shadow: 0 4px 15px rgba(163, 193, 173, 0.3);
+    box-shadow: 0 8px 40px rgba(250, 204, 21, 0.8);
+    transition: transform 0.1s ease;
+}
+
+.modal-confirm-btn:active {
+    transform: scale(0.95);
 }
