@@ -279,7 +279,7 @@ function playAlertSound() {
 }
 
 
-// --- 📝 건강·소통 로그 시스템 (뒤로가기, 대상자별 색상, 해열제 테마 적용) ---
+// --- 📝 건강·소통 로그 시스템 (날짜 및 시간 직접 입력 기능) ---
 const logTriggerBtn = document.getElementById('logTriggerBtn');
 const logPanel = document.getElementById('logPanel');
 const logCloseBtn = document.getElementById('logCloseBtn');
@@ -326,7 +326,6 @@ function resetWizard() {
     renderWizardStep1();
 }
 
-// 1단계: 기록할 항목 선택
 function renderWizardStep1() {
     logWizardArea.innerHTML = `
         <div class="wizard-step-header">
@@ -344,11 +343,10 @@ window.selectCategory = function(cat) {
     renderWizardStep2();
 };
 
-// 2단계: 대상 선택 (윤우:파랑, 윤서:핑크, 엄마/아빠:흰색) + 뒤로가기 추가
 function renderWizardStep2() {
     logWizardArea.innerHTML = `
         <div class="wizard-step-header">
-            <div class="wizard-step-title">[${logState.category}] 대상 선택</div>
+            <div class="wizard-step-title">[${logState.category}] 누가 아파요?ㅠㅠ</div>
             <button class="wizard-back-btn" onclick="renderWizardStep1()">⬅️ 뒤로</button>
         </div>
         <div class="wizard-pills-container">
@@ -369,7 +367,6 @@ window.selectPerson = function(person) {
     }
 };
 
-// 해열제 종류 선택 (아세트:붉은색, 부르펜:누런하얀색 테마 적용) + 뒤로가기 추가
 function renderWizardStepFeverMed() {
     logWizardArea.innerHTML = `
         <div class="wizard-step-header">
@@ -388,7 +385,6 @@ window.selectFeverMed = function(med) {
     renderWizardStepTime('fever');
 };
 
-// 체온 정수 선택 + 뒤로가기 추가
 function renderWizardStepTempInt() {
     logWizardArea.innerHTML = `
         <div class="wizard-step-header">
@@ -415,7 +411,6 @@ window.selectTempInt = function(val) {
     }
 };
 
-// 체온 소수점 선택 + 뒤로가기 추가
 function renderWizardStepTempDec() {
     let btnsHTML = '';
     for (let i = 0; i <= 9; i++) {
@@ -437,12 +432,21 @@ window.selectTempDec = function(dec) {
     renderWizardStepTime('temp');
 };
 
-// 시간 선택 + 뒤로가기 추가
+// 시간 선택 단계 (날짜 + 시간 직접 입력 포함)
 function renderWizardStepTime(type) {
     let backFunc = (type === 'fever') ? 'renderWizardStepFeverMed()' : (logState.subCategory === '정상' ? 'renderWizardStepTempInt()' : 'renderWizardStepTempDec()');
+    
+    // 현재 날짜 및 시각 기본값 세팅 (YYYY-MM-DD 및 HH:MM)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const defaultDateStr = `${year}-${month}-${day}`;
+    const defaultTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
     logWizardArea.innerHTML = `
         <div class="wizard-step-header">
-            <div class="wizard-step-title">투약/측정 시간 선택</div>
+            <div class="wizard-step-title">투약/측정 날짜 및 시간 선택</div>
             <button class="wizard-back-btn" onclick="${backFunc}">⬅️ 뒤로</button>
         </div>
         <div class="wizard-pills-container">
@@ -450,12 +454,43 @@ function renderWizardStepTime(type) {
             <button class="wizard-pill" onclick="finalizeLog('${type}', 1)">1시간 전</button>
             <button class="wizard-pill" onclick="finalizeLog('${type}', 2)">2시간 전</button>
         </div>
+        <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.08); padding: 12px; border-radius: 12px;">
+            <div style="color: #93C5FD; font-size: 14px; font-weight: 700;">📅 날짜 및 시간 직접 지정:</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="date" id="customDateInput" value="${defaultDateStr}" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 6px 10px; border-radius: 8px; font-size: 15px; font-weight: bold;">
+                <input type="time" id="customTimeInput" value="${defaultTimeStr}" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 6px 10px; border-radius: 8px; font-size: 15px; font-weight: bold;">
+                <button class="wizard-pill" style="padding: 6px 16px; font-size: 14px;" onclick="finalizeLogCustom('${type}')">적용</button>
+            </div>
+        </div>
     `;
 }
 
 window.finalizeLog = function(type, offsetHours) {
     const targetDate = new Date(Date.now() - offsetHours * 3600000);
+    processAndSaveLog(type, targetDate);
+};
+
+window.finalizeLogCustom = function(type) {
+    const dateInputVal = document.getElementById('customDateInput').value;
+    const timeInputVal = document.getElementById('customTimeInput').value;
+
+    if (!dateInputVal || !timeInputVal) {
+        alert("날짜와 시간을 올바르게 선택해 주세요.");
+        return;
+    }
+
+    const [year, month, day] = dateInputVal.split('-').map(Number);
+    const [hours, minutes] = timeInputVal.split(':').map(Number);
+
+    const targetDate = new Date(year, month - 1, day, hours, minutes, 0);
+    processAndSaveLog(type, targetDate);
+};
+
+function processAndSaveLog(type, targetDate) {
+    const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const d = String(targetDate.getDate()).padStart(2, '0');
     const timeStr = `${String(targetDate.getHours()).padStart(2, '0')}:${String(targetDate.getMinutes()).padStart(2, '0')}`;
+    const datePrefix = `${m}/${d} `;
     
     let logText = '';
     let rawPushText = '';
@@ -463,17 +498,17 @@ window.finalizeLog = function(type, offsetHours) {
     let detailVal = logState.subCategory;
 
     if (type === 'fever') {
-        rawPushText = `로그 ${logState.person} | 해열제 투약 (${detailVal}) [${timeStr}] [token:${myClientToken}]`;
+        rawPushText = `로그 ${logState.person} | 해열제 투약 (${detailVal}) [${datePrefix}${timeStr}] [token:${myClientToken}]`;
         let medFormatted = detailVal === '아세트' ? 
             '<span class="med-acet">아세트</span>' : 
             '<span class="med-ibu">부르펜</span>';
         
-        logText = `[${timeStr}] ${logState.person} | 해열제 투약 (${medFormatted})`;
+        logText = `[${datePrefix}${timeStr}] ${logState.person} | 해열제 투약 (${medFormatted})`;
         itemClass = 'fever-reducer';
     } else {
         let tempVal = detailVal === '정상' ? '정상 체온' : `${detailVal}.${logState.decimal}°C`;
-        rawPushText = `로그 ${logState.person} | 체온 측정 (${tempVal}) [${timeStr}] [token:${myClientToken}]`;
-        logText = `[${timeStr}] ${logState.person} | 체온 측정 (${tempVal})`;
+        rawPushText = `로그 ${logState.person} | 체온 측정 (${tempVal}) [${datePrefix}${timeStr}] [token:${myClientToken}]`;
+        logText = `[${datePrefix}${timeStr}] ${logState.person} | 체온 측정 (${tempVal})`;
         itemClass = 'temperature';
         detailVal = tempVal;
     }
@@ -491,7 +526,7 @@ window.finalizeLog = function(type, offsetHours) {
 
     appendLogUIDirect(targetDate, logText, itemClass);
     resetWizard();
-};
+}
 
 function sendNtfyLog(text) {
     fetch(`https://ntfy.sh/${NTFY_CHANNEL}`, {
