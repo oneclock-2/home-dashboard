@@ -678,6 +678,7 @@ body {
 .log-item-delete:hover { color: #EF4444; }
 
 /* 🚨 긴급 알림 강렬한 번쩍번쩍 애니메이션 및 초대형 창 (좌우 최대 1600px 확장) */
+/* 🚨 긴급 알림 강렬한 번쩍번쩍 애니메이션 및 최적화된 초대형 창 */
 @keyframes emergencyFlashStrobe {
     0% {
         background: rgba(15, 23, 42, 0.98);
@@ -754,10 +755,10 @@ body {
     background: rgba(15, 23, 42, 0.98);
     border: 4px solid rgba(255, 255, 255, 0.4);
     border-radius: 28px;
-    padding: 36px 48px;
+    padding: 30px 48px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     align-items: center;
     justify-content: center;
     width: 100%;
@@ -766,18 +767,19 @@ body {
 
 .unconfirmed-time {
     color: #94A3B8;
-    font-size: 26px;
+    font-size: 24px;
     font-weight: bold;
 }
 
+/* 🌟 알림 글씨 크기를 기존(165px)에서 30% 줄여서 확인 버튼을 가리지 않도록 조정 (약 115px) */
 .unconfirmed-msg {
     color: #FFFFFF;
-    font-size: 165px;
+    font-size: 115px;
     font-weight: 900;
     text-align: center;
-    padding: 20px 0;
+    padding: 10px 0;
     line-height: 1.15;
-    text-shadow: 0 8px 30px rgba(0, 0, 0, 0.9);
+    text-shadow: 0 6px 25px rgba(0, 0, 0, 0.9);
     word-break: break-all;
     width: 100%;
 }
@@ -787,13 +789,14 @@ body {
     color: white;
     border: none;
     width: 100%;
-    padding: 24px;
+    padding: 22px;
     border-radius: 20px;
-    font-size: 32px;
+    font-size: 30px;
     font-weight: 900;
     cursor: pointer;
     box-shadow: 0 10px 30px rgba(34, 197, 94, 0.7);
     transition: transform 0.1s;
+    flex-shrink: 0; /* 버튼이 찌그러지거나 가려지지 않도록 고정 */
 }
 .modal-confirm-btn:hover {
     transform: scale(1.02);
