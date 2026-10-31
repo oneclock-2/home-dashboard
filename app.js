@@ -1,6 +1,5 @@
 const NTFY_CHANNEL = "phyjs1073080634"; 
 
-// --- 💡 전역 변수 선언 ---
 let globalLogsData = [];
 let currentFilter = { person: '전체', category: '전체' };
 const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -13,35 +12,30 @@ let logState = {
     timeOffset: 0   
 };
 
-// --- 🌟 5일치 윤우·윤서 아팠을 때 목업 테스트 데이터 자동 로드 ---
+// --- 🌟 5일치 윤우·윤서 목업 테스트 데이터 (24시간제 적용) ---
 function loadMockTestData() {
     const baseTime = new Date();
     const mockItems = [
-        // 5일 전 (윤우 고열 및 부르펜 투약)
         { daysAgo: 5, hour: 9, person: '윤우', type: 'temp', subDetail: '39', decimal: '2' },
         { daysAgo: 5, hour: 9, person: '윤우', type: 'fever', subDetail: '부르펜' },
         { daysAgo: 5, hour: 13, person: '윤우', type: 'temp', subDetail: '38', decimal: '5' },
         { daysAgo: 5, hour: 17, person: '윤우', type: 'general-med', subDetail: '항생제' },
         { daysAgo: 5, hour: 21, person: '윤우', type: 'fever', subDetail: '아세트' },
 
-        // 4일 전 (윤우 호전세 및 윤서 미열 시작)
         { daysAgo: 4, hour: 8, person: '윤우', type: 'temp', subDetail: '37', decimal: '5' },
         { daysAgo: 4, hour: 10, person: '윤서', type: 'temp', subDetail: '39', decimal: '0' },
         { daysAgo: 4, hour: 10, person: '윤서', type: 'fever', subDetail: '부르펜' },
         { daysAgo: 4, hour: 15, person: '윤서', type: 'temp', subDetail: '38', decimal: '2' },
         { daysAgo: 4, hour: 20, person: '윤서', type: 'general-med', subDetail: '유산균/비타민' },
 
-        // 3일 전
         { daysAgo: 3, hour: 9, person: '윤우', type: 'temp', subDetail: '정상', decimal: '0' },
         { daysAgo: 3, hour: 9, person: '윤서', type: 'temp', subDetail: '38', decimal: '1' },
         { daysAgo: 3, hour: 14, person: '윤서', type: 'fever', subDetail: '아세트' },
         { daysAgo: 3, hour: 19, person: '윤서', type: 'temp', subDetail: '37', decimal: '4' },
 
-        // 2일 전
         { daysAgo: 2, hour: 10, person: '윤서', type: 'temp', subDetail: '정상', decimal: '0' },
         { daysAgo: 2, hour: 14, person: '윤우', type: 'general-med', subDetail: '처방약' },
 
-        // 오늘 (현재 기준)
         { daysAgo: 0, hour: 8, person: '윤우', type: 'temp', subDetail: '정상', decimal: '0' },
         { daysAgo: 0, hour: 8, person: '윤서', type: 'temp', subDetail: '정상', decimal: '0' }
     ];
@@ -53,7 +47,8 @@ function loadMockTestData() {
         let itemClass = m.type === 'fever' ? 'fever-reducer' : (m.type === 'temp' ? 'temperature' : 'general-med');
         let mMonth = String(tDate.getMonth() + 1).padStart(2, '0');
         let mDay = String(tDate.getDate()).padStart(2, '0');
-        let dateFormattedStr = `${mMonth}/${mDay}(${daysOfWeek[tDate.getDay()]}) ${String(m.hour).padStart(2, '0')}:00`;
+        let dateFormattedStr = `${mMonth}/${mDay}(${daysOfWeek[tDate.getDay()]})`;
+        let timeFormattedStr = `${String(m.hour).padStart(2, '0')}:00`;
 
         globalLogsData.push({
             id: Date.now() + Math.random(),
@@ -62,7 +57,8 @@ function loadMockTestData() {
             type: m.type,
             subDetail: m.subDetail,
             decimal: m.decimal || '0',
-            dateFormattedStr: dateFormattedStr,
+            dateStr: dateFormattedStr,
+            timeStr: timeFormattedStr,
             className: itemClass,
             isFuturePending: false,
             rawPushText: `목업로그 ${m.person} | ${m.type}`
@@ -72,24 +68,17 @@ function loadMockTestData() {
 
 loadMockTestData();
 
-
-// --- 시계 작동 (정중앙 시계 갱신 및 예약 알림 체크) ---
 function updateClock() {
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const clockEl = document.getElementById('centerClock');
-    if (clockEl) {
-        clockEl.innerText = `${hours}:${minutes}`;
-    }
-
+    if (clockEl) clockEl.innerText = `${hours}:${minutes}`;
     checkFutureReminders();
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-
-// --- 배경 사진 슬라이드 (10분 주기) ---
 let currentSlide = 0;
 const slides = document.querySelectorAll('.slide');
 setInterval(() => {
@@ -98,54 +87,34 @@ setInterval(() => {
     slides[currentSlide].classList.add('active');
 }, 10 * 60 * 1000);
 
-
-// --- 화면 밝기 및 켜짐 유지 (Wake Lock API) ---
 let wakeLock = null;
 async function requestScreenWakeLock() {
     try {
-        if ('wakeLock' in navigator) {
-            wakeLock = await navigator.wakeLock.request('screen');
-        }
-    } catch (err) {
-        console.log('Wake Lock 요청 실패:', err);
-    }
+        if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    } catch (err) { console.log(err); }
 }
 document.addEventListener('visibilitychange', async () => {
-    if (wakeLock !== null && document.visibilityState === 'visible') {
-        await requestScreenWakeLock();
-    }
+    if (wakeLock !== null && document.visibilityState === 'visible') await requestScreenWakeLock();
 });
 requestScreenWakeLock();
 
-
-// --- 날씨 정보 가져오기 ---
 async function fetchWeather() {
     try {
         const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=37.3943&longitude=126.9568&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia/Seoul');
         const data = await res.json();
-        
         if (data && data.daily) {
             const days = data.daily;
             const todayMax = Math.round(days.temperature_2m_max[0]);
             const todayMin = Math.round(days.temperature_2m_min[0]);
             const todayDesc = getWeatherText(days.weathercode[0]);
-            
             const tomoMax = Math.round(days.temperature_2m_max[1]);
             const tomoMin = Math.round(days.temperature_2m_min[1]);
             const tomoDesc = getWeatherText(days.weathercode[1]);
 
-            document.getElementById('weatherToday').innerHTML = `
-                <span class="w-label">오늘</span>
-                <span class="w-info">${todayDesc} <br>${todayMin}° / ${todayMax}°</span>
-            `;
-            document.getElementById('weatherTomorrow').innerHTML = `
-                <span class="w-label">내일</span>
-                <span class="w-info">${tomoDesc} <br>${tomoMin}° / ${tomoMax}°</span>
-            `;
+            document.getElementById('weatherToday').innerHTML = `<span class="w-label">오늘</span><span class="w-info">${todayDesc} <br>${todayMin}° / ${todayMax}°</span>`;
+            document.getElementById('weatherTomorrow').innerHTML = `<span class="w-label">내일</span><span class="w-info">${tomoDesc} <br>${tomoMin}° / ${tomoMax}°</span>`;
         }
-    } catch (e) {
-        console.error("날씨 정보 로드 실패", e);
-    }
+    } catch (e) { console.error(e); }
 }
 
 function getWeatherText(code) {
@@ -158,12 +127,9 @@ function getWeatherText(code) {
     if (code >= 95) return "⚡ 뇌우";
     return "☁️ 흐림";
 }
-
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 
-
-// --- 🌙 미사용 시 절전모드 ---
 const brightnessOverlay = document.getElementById('brightnessOverlay');
 let minBrightness = 0.6; 
 let sleepTimer = null;
@@ -179,14 +145,11 @@ function wakeUpScreen() {
         if (centerClockContainer) centerClockContainer.style.opacity = '0.35';
     }, 10000);
 }
-
 window.addEventListener('touchstart', wakeUpScreen);
 window.addEventListener('mousemove', wakeUpScreen);
 window.addEventListener('click', wakeUpScreen);
 wakeUpScreen();
 
-
-// --- 환경설정 및 볼륨 제어 ---
 const settingsGearBtn = document.getElementById('settingsGearBtn');
 const settingsModal = document.getElementById('settingsModal');
 const settingsCloseBtn = document.getElementById('settingsCloseBtn');
@@ -203,15 +166,8 @@ window.changeAlertFontSize = function(sizeVal) {
     alert(`알림 글씨 크기가 변경되었습니다.`);
 };
 
-window.updateBrightnessLevel = function(val) {
-    minBrightness = parseFloat(val);
-    brightnessOverlay.style.opacity = minBrightness;
-};
-
-window.updateAlertVolume = function(val) {
-    alertVolumeMultiplier = parseFloat(val);
-    document.getElementById('volumeLabel').innerText = `${Math.round(alertVolumeMultiplier * 100)}%`;
-};
+window.updateBrightnessLevel = function(val) { minBrightness = parseFloat(val); brightnessOverlay.style.opacity = minBrightness; };
+window.updateAlertVolume = function(val) { alertVolumeMultiplier = parseFloat(val); document.getElementById('volumeLabel').innerText = `${Math.round(alertVolumeMultiplier * 100)}%`; };
 
 function playAlertSound() {
     try {
@@ -219,11 +175,9 @@ function playAlertSound() {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioCtx.createMediaElementSource(audio);
         const gainNode = audioCtx.createGain();
-
         gainNode.gain.value = alertVolumeMultiplier;
         source.connect(gainNode);
         gainNode.connect(audioCtx.destination);
-
         audio.play().catch(e => { console.log(e); });
     } catch (e) {
         try {
@@ -234,25 +188,16 @@ function playAlertSound() {
     }
 }
 
-
-// --- 알림 및 스케줄러 처리 로직 ---
 let unconfirmedList = []; 
 let reminderTimeout = null;
 let reminderStep = 0;
-
-const REMINDER_INTERVALS = [
-    10 * 60 * 1000,  
-    30 * 60 * 1000,  
-    60 * 60 * 1000,  
-    120 * 60 * 1000 
-];
+const REMINDER_INTERVALS = [10 * 60 * 1000, 30 * 60 * 1000, 60 * 60 * 1000, 120 * 60 * 1000];
 
 const modal = document.getElementById('messageModal');
 const unconfirmedContainer = document.getElementById('unconfirmedContainer');
 const checklistBar = document.getElementById('checklistBar');
 const checklistItems = document.getElementById('checklistItems');
 const stickyNotesContainer = document.getElementById('stickyNotesContainer');
-
 const myClientToken = 'tablet-' + Math.random().toString(36).substring(2, 9);
 const eventSource = new EventSource(`https://ntfy.sh/${NTFY_CHANNEL}/sse`);
 
@@ -266,56 +211,34 @@ eventSource.onmessage = function(event) {
             if (data.message.startsWith('로그') || data.message.includes('로그')) {
                 const cleanMsg = data.message.replace(/\[token:[^\]]+\]/, '').replace(/^로그\s*/, '').trim();
                 const now = new Date();
-                
-                let formattedMsg = cleanMsg
-                    .replace('아세트', '<span class="med-acet">아세트</span>')
-                    .replace('부르펜', '<span class="med-ibu">부르펜</span>');
-                
-                let detectedType = 'push-log';
-                if (cleanMsg.includes('해열제')) detectedType = 'fever-reducer';
-                else if (cleanMsg.includes('체온')) detectedType = 'temperature';
-                else if (cleanMsg.includes('약(') || cleanMsg.includes('일반약')) detectedType = 'general-med';
-
+                let formattedMsg = cleanMsg.replace('아세트', '<span class="med-acet">아세트</span>').replace('부르펜', '<span class="med-ibu">부르펜</span>');
+                let detectedType = cleanMsg.includes('해열제') ? 'fever-reducer' : (cleanMsg.includes('체온') ? 'temperature' : 'general-med');
                 appendLogDataDirect(now, formattedMsg, detectedType, '외부폰');
                 return;
             }
-
             if (data.message.includes('경적')) playAlertSound();
             triggerEmergencyAlert(data.message);
         }
-    } catch (e) {
-        console.error("데이터 파싱 오류", e);
-    }
+    } catch (e) { console.error(e); }
 };
 
 function triggerEmergencyAlert(messageText) {
     const now = new Date();
     const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    
-    const newItem = { id: Date.now() + Math.random(), text: messageText, time: timeString };
-    unconfirmedList.push(newItem);
+    unconfirmedList.push({ id: Date.now() + Math.random(), text: messageText, time: timeString });
     playAlertSound();
     renderUnconfirmedModal();
     modal.classList.add('active');
-
     requestScreenWakeLock();
     startProgressiveReminder();
 }
 
 function startProgressiveReminder() {
     if (reminderTimeout) clearTimeout(reminderTimeout);
-    if (unconfirmedList.length === 0) {
-        reminderStep = 0;
-        return;
-    }
+    if (unconfirmedList.length === 0) { reminderStep = 0; return; }
     const currentDelay = REMINDER_INTERVALS[Math.min(reminderStep, REMINDER_INTERVALS.length - 1)];
     reminderTimeout = setTimeout(() => {
-        if (unconfirmedList.length > 0) {
-            playAlertSound();
-            requestScreenWakeLock();
-            reminderStep++;
-            startProgressiveReminder();
-        }
+        if (unconfirmedList.length > 0) { playAlertSound(); requestScreenWakeLock(); reminderStep++; startProgressiveReminder(); }
     }, currentDelay);
 }
 
@@ -323,10 +246,7 @@ function renderUnconfirmedModal() {
     unconfirmedContainer.innerHTML = '';
     if (unconfirmedList.length === 0) {
         modal.classList.remove('active');
-        if (reminderTimeout) {
-            clearTimeout(reminderTimeout);
-            reminderTimeout = null;
-        }
+        if (reminderTimeout) { clearTimeout(reminderTimeout); reminderTimeout = null; }
         reminderStep = 0;
         return;
     }
@@ -348,7 +268,6 @@ window.confirmItem = function(id) {
         const confirmed = unconfirmedList.splice(index, 1)[0];
         const now = new Date();
         const confirmTimeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
         addToChecklist(confirmed.text, confirmed.time, confirmTimeString);
         sendNtfyResponse(confirmed.text, confirmed.time);
         renderUnconfirmedModal();
@@ -356,70 +275,33 @@ window.confirmItem = function(id) {
 };
 
 function sendNtfyResponse(text, time) {
-    fetch(`https://ntfy.sh/${NTFY_CHANNEL}`, {
-        method: 'POST',
-        body: `[확인완료] "${text}" (수신시각: ${time}) [token:${myClientToken}]`
-    }).catch(err => { console.log(err); });
+    fetch(`https://ntfy.sh/${NTFY_CHANNEL}`, { method: 'POST', body: `[확인완료] "${text}" (수신시각: ${time}) [token:${myClientToken}]` }).catch(err => { console.log(err); });
 }
 
 function addToChecklist(text, receiveTime, confirmTime) {
     checklistBar.style.display = 'block';
     const itemEl = document.createElement('div');
     itemEl.className = 'check-item';
-    
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'item-content';
-
-    const textSpan = document.createElement('span');
-    textSpan.innerHTML = text;
-
-    const timeSpan = document.createElement('span');
-    timeSpan.className = 'item-time';
-    timeSpan.innerText = `수신: ${receiveTime} | 확인: ${confirmTime}`;
-
-    contentDiv.appendChild(textSpan);
-    contentDiv.appendChild(timeSpan);
-
-    const btnContainer = document.createElement('div');
-    btnContainer.className = 'item-buttons';
-
-    const postItBtn = document.createElement('button');
-    postItBtn.className = 'postit-btn';
-    postItBtn.innerText = '📌 포스트잇';
-    postItBtn.onclick = () => { createStickyNote(text, confirmTime); };
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'delete-btn';
-    deleteBtn.innerText = '삭제';
-    deleteBtn.onclick = () => {
-        itemEl.remove();
-        if (checklistItems.children.length === 0) {
-            checklistBar.style.display = 'none';
-        }
-    };
-
-    btnContainer.appendChild(postItBtn);
-    btnContainer.appendChild(deleteBtn);
-    itemEl.appendChild(contentDiv);
-    itemEl.appendChild(btnContainer);
+    itemEl.innerHTML = `
+        <div class="item-content">
+            <span>${text}</span>
+            <span class="item-time">수신: ${receiveTime} | 확인: ${confirmTime}</span>
+        </div>
+        <div class="item-buttons">
+            <button class="postit-btn" onclick="createStickyNote('${text}', '${confirmTime}')">📌 포스트잇</button>
+            <button class="delete-btn" onclick="this.closest('.check-item').remove(); if(checklistItems.children.length===0) checklistBar.style.display='none';">삭제</button>
+        </div>
+    `;
     checklistItems.prepend(itemEl);
 }
 
 function createStickyNote(text, time) {
     const note = document.createElement('div');
     note.className = 'sticky-note';
-    note.innerHTML = `
-        <div class="sticky-note-text">${text}</div>
-        <div class="sticky-note-footer">
-            <span>${time} 부착됨</span>
-            <button class="sticky-note-delete" onclick="this.closest('.sticky-note').remove()">[휴지통]</button>
-        </div>
-    `;
+    note.innerHTML = `<div class="sticky-note-text">${text}</div><div class="sticky-note-footer"><span>${time} 부착됨</span><button class="sticky-note-delete" onclick="this.closest('.sticky-note').remove()">[휴지통]</button></div>`;
     stickyNotesContainer.prepend(note);
 }
 
-
-// --- 📝 건강·소통 로그 시스템 ---
 const logTriggerBtn = document.getElementById('logTriggerBtn');
 const logPanelBackdrop = document.getElementById('logPanelBackdrop');
 const logHideBtn = document.getElementById('logHideBtn');
@@ -432,75 +314,34 @@ const logListArea = document.getElementById('logListArea');
 const logMiniBadgeBar = document.getElementById('logMiniBadgeBar');
 const miniBadgeCount = document.getElementById('miniBadgeCount');
 const miniSummaryTexts = document.getElementById('miniSummaryTexts');
-
 const reportModal = document.getElementById('reportModal');
 const reportCloseBtn = document.getElementById('reportCloseBtn');
 const reportContainer = document.getElementById('reportContainer');
 
-if (logTriggerBtn) {
-    logTriggerBtn.onclick = () => {
-        if (logPanelBackdrop) {
-            logPanelBackdrop.classList.add('active');
-            resetWizard();
-        }
-    };
-}
-
-if (logPanelBackdrop) {
-    logPanelBackdrop.onclick = () => {
-        logPanelBackdrop.classList.remove('active');
-        updateMiniBadgeBar();
-    };
-}
-
-if (logHideBtn) {
-    logHideBtn.onclick = () => {
-        if (logPanelBackdrop) {
-            logPanelBackdrop.classList.remove('active');
-            updateMiniBadgeBar();
-        }
-    };
-}
-
-if (logTotalDeleteBtn) {
-    logTotalDeleteBtn.onclick = () => {
-        if (confirm("정말 모든 로그 기록을 삭제하시겠습니까?")) {
-            globalLogsData = []; 
-            currentFilter = { person: '전체', category: '전체' };
-            renderAllLogsUI();
-            if (logPanelBackdrop) logPanelBackdrop.classList.remove('active');
-            updateMiniBadgeBar();
-        }
-    };
-}
-
-window.openLogPanelFromMini = function() {
-    if (logPanelBackdrop) {
-        logPanelBackdrop.classList.add('active');
-        resetWizard();
+if (logTriggerBtn) logTriggerBtn.onclick = () => { if (logPanelBackdrop) { logPanelBackdrop.classList.add('active'); resetWizard(); } };
+if (logPanelBackdrop) logPanelBackdrop.onclick = () => { logPanelBackdrop.classList.remove('active'); updateMiniBadgeBar(); };
+if (logHideBtn) logHideBtn.onclick = () => { if (logPanelBackdrop) { logPanelBackdrop.classList.remove('active'); updateMiniBadgeBar(); } };
+if (logTotalDeleteBtn) logTotalDeleteBtn.onclick = () => {
+    if (confirm("정말 모든 로그 기록을 삭제하시겠습니까?")) {
+        globalLogsData = []; currentFilter = { person: '전체', category: '전체' };
+        renderAllLogsUI(); if (logPanelBackdrop) logPanelBackdrop.classList.remove('active'); updateMiniBadgeBar();
     }
 };
 
-if (logReportBtn) {
-    logReportBtn.onclick = () => {
-        isChartViewActive = false;
-        document.getElementById('reportContainer').style.display = 'flex';
-        document.getElementById('reportChartContainer').style.display = 'none';
-        document.getElementById('toggleReportChartBtn').innerText = '📈 차트보기';
-        
-        buildTimelineReport();
-        updateSavedLogsDropdown();
-        if (reportModal) reportModal.classList.add('active');
-    };
-}
+window.openLogPanelFromMini = function() { if (logPanelBackdrop) { logPanelBackdrop.classList.add('active'); resetWizard(); } };
 
-if (logFilterBtn) {
-    logFilterBtn.onclick = () => { renderFilterWizard(); };
-}
+if (logReportBtn) logReportBtn.onclick = () => {
+    isChartViewActive = false;
+    document.getElementById('reportContainer').style.display = 'flex';
+    document.getElementById('reportChartContainer').style.display = 'none';
+    document.getElementById('toggleReportChartBtn').innerText = '📈 차트보기';
+    buildTimelineReport();
+    updateSavedLogsDropdown();
+    if (reportModal) reportModal.classList.add('active');
+};
 
-if (reportCloseBtn) {
-    reportCloseBtn.onclick = () => { if (reportModal) reportModal.classList.remove('active'); };
-}
+if (logFilterBtn) logFilterBtn.onclick = () => { renderFilterWizard(); };
+if (reportCloseBtn) reportCloseBtn.onclick = () => { if (reportModal) reportModal.classList.remove('active'); };
 
 function updateMiniBadgeBar() {
     if (!logMiniBadgeBar) return;
@@ -508,11 +349,10 @@ function updateMiniBadgeBar() {
         logTriggerBtn.style.display = 'none';
         logMiniBadgeBar.style.display = 'flex';
         miniBadgeCount.innerText = globalLogsData.length;
-
         let sortedDesc = [...globalLogsData].sort((a, b) => b.timestamp - a.timestamp);
         let top4Texts = sortedDesc.slice(0, 4).map(l => {
             let desc = l.type === 'fever' ? `[${l.person}] ${l.subDetail}` : (l.type === 'temp' ? `[${l.person}] 체온` : (l.type === 'general-med' ? `[${l.person}] 약(${l.subDetail})` : l.text));
-            return `${l.dateFormattedStr.slice(6)} ${desc}`;
+            return `${l.timeStr} ${desc}`;
         });
         miniSummaryTexts.innerText = top4Texts.join(' | ');
     } else {
@@ -544,7 +384,6 @@ function renderFilterWizard() {
                 <button class="wizard-pill pill-parent" onclick="applyFilterPerson('아빠')">👨 아빠</button>
                 <button class="wizard-pill pill-parent" onclick="applyFilterPerson('엄마')">👩 엄마</button>
             </div>
-            
             <div style="color: #93C5FD; font-size: 14px; font-weight: 700; margin-top: 6px;">2) 항목 선택:</div>
             <div class="wizard-pills-container">
                 <button class="wizard-pill ${currentFilter.category === '전체' ? 'pill-med-acet' : ''}" onclick="applyFilterCategory('전체')">전체</button>
@@ -556,24 +395,13 @@ function renderFilterWizard() {
     `;
 }
 
-window.applyFilterPerson = function(person) {
-    currentFilter.person = person;
-    renderAllLogsUI();
-    renderFilterWizard();
-};
-
-window.applyFilterCategory = function(cat) {
-    currentFilter.category = cat;
-    renderAllLogsUI();
-    renderFilterWizard();
-};
+window.applyFilterPerson = function(person) { currentFilter.person = person; renderAllLogsUI(); renderFilterWizard(); };
+window.applyFilterCategory = function(cat) { currentFilter.category = cat; renderAllLogsUI(); renderFilterWizard(); };
 
 function renderWizardStep1() {
     if (!logWizardArea) return;
     logWizardArea.innerHTML = `
-        <div class="wizard-step-header">
-            <div class="wizard-step-title">1단계: 기록할 항목 선택</div>
-        </div>
+        <div class="wizard-step-header"><div class="wizard-step-title">1단계: 기록할 항목 선택</div></div>
         <div class="wizard-pills-container">
             <button class="wizard-pill accent" onclick="selectCategory('해열제')">💊 해열제 투약</button>
             <button class="wizard-pill" style="background: #334155; color: #F1F5F9; border: 1px solid #64748B;" onclick="selectCategory('약')">💊 약 복용</button>
@@ -592,10 +420,7 @@ window.selectCategory = function(cat) {
 function renderWizardStepFeverMed() {
     if (!logWizardArea) return;
     logWizardArea.innerHTML = `
-        <div class="wizard-step-header">
-            <div class="wizard-step-title">[해열제] 대상 선택</div>
-            <button class="wizard-back-btn" onclick="renderWizardStep1()">⬅️ 뒤로</button>
-        </div>
+        <div class="wizard-step-header"><div class="wizard-step-title">[해열제] 대상 선택</div><button class="wizard-back-btn" onclick="renderWizardStep1()">⬅️ 뒤로</button></div>
         <div class="wizard-pills-container">
             <button class="wizard-pill pill-yoonwoo" onclick="setPersonAndProceed('윤우', 'fever')">👦 윤우</button>
             <button class="wizard-pill pill-yoonseo" onclick="setPersonAndProceed('윤서', 'fever')">👧 윤서</button>
@@ -614,10 +439,7 @@ window.setPersonAndProceed = function(person, mode) {
 function renderWizardStepFeverMedChoice() {
     if (!logWizardArea) return;
     logWizardArea.innerHTML = `
-        <div class="wizard-step-header">
-            <div class="wizard-step-title">[${logState.person}] 해열제 종류 선택</div>
-            <button class="wizard-back-btn" onclick="renderWizardStepFeverMed()">⬅️ 뒤로</button>
-        </div>
+        <div class="wizard-step-header"><div class="wizard-step-title">[${logState.person}] 해열제 종류 선택</div><button class="wizard-back-btn" onclick="renderWizardStepFeverMed()">⬅️ 뒤로</button></div>
         <div class="wizard-pills-container">
             <button class="wizard-pill pill-med-ibu" onclick="selectFeverMed('부르펜')">부르펜</button>
             <button class="wizard-pill pill-med-acet" onclick="selectFeverMed('아세트')">아세트</button>
@@ -625,18 +447,12 @@ function renderWizardStepFeverMedChoice() {
     `;
 }
 
-window.selectFeverMed = function(med) {
-    logState.subCategory = med;
-    renderWizardStepTime('fever');
-};
+window.selectFeverMed = function(med) { logState.subCategory = med; renderWizardStepTime('fever'); };
 
 function renderWizardStepGeneralMed() {
     if (!logWizardArea) return;
     logWizardArea.innerHTML = `
-        <div class="wizard-step-header">
-            <div class="wizard-step-title">[약 복용] 대상 선택</div>
-            <button class="wizard-back-btn" onclick="renderWizardStep1()">⬅️ 뒤로</button>
-        </div>
+        <div class="wizard-step-header"><div class="wizard-step-title">[약 복용] 대상 선택</div><button class="wizard-back-btn" onclick="renderWizardStep1()">⬅️ 뒤로</button></div>
         <div class="wizard-pills-container">
             <button class="wizard-pill pill-yoonwoo" onclick="setPersonAndProceed('윤우', 'gen')">👦 윤우</button>
             <button class="wizard-pill pill-yoonseo" onclick="setPersonAndProceed('윤서', 'gen')">👧 윤서</button>
@@ -649,10 +465,7 @@ function renderWizardStepGeneralMed() {
 function renderWizardStepGeneralMedChoice() {
     if (!logWizardArea) return;
     logWizardArea.innerHTML = `
-        <div class="wizard-step-header">
-            <div class="wizard-step-title">[${logState.person}] 약 종류 선택 또는 직접 입력</div>
-            <button class="wizard-back-btn" onclick="renderWizardStepGeneralMed()">⬅️ 뒤로</button>
-        </div>
+        <div class="wizard-step-header"><div class="wizard-step-title">[${logState.person}] 약 종류 선택 또는 직접 입력</div><button class="wizard-back-btn" onclick="renderWizardStepGeneralMed()">⬅️ 뒤로</button></div>
         <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 6px;">
             <div class="wizard-pills-container">
                 <button class="wizard-pill" style="background:#334155; color:#F1F5F9; border: 1px solid #64748B;" onclick="selectGeneralMed('항생제')">항생제</button>
@@ -667,11 +480,7 @@ function renderWizardStepGeneralMedChoice() {
     `;
 }
 
-window.selectGeneralMed = function(medName) {
-    logState.subCategory = medName;
-    renderWizardStepTime('general-med');
-};
-
+window.selectGeneralMed = function(medName) { logState.subCategory = medName; renderWizardStepTime('general-med'); };
 window.submitCustomGeneralMed = function() {
     const inputVal = document.getElementById('customMedInput').value.trim();
     if (!inputVal) { alert("약 이름을 입력해 주세요."); return; }
@@ -679,14 +488,10 @@ window.submitCustomGeneralMed = function() {
     renderWizardStepTime('general-med');
 };
 
-
 function renderWizardStepTempInt() {
     if (!logWizardArea) return;
     logWizardArea.innerHTML = `
-        <div class="wizard-step-header">
-            <div class="wizard-step-title">[체온 측정] 대상 선택</div>
-            <button class="wizard-back-btn" onclick="renderWizardStep1()">⬅️ 뒤로</button>
-        </div>
+        <div class="wizard-step-header"><div class="wizard-step-title">[체온 측정] 대상 선택</div><button class="wizard-back-btn" onclick="renderWizardStep1()">⬅️ 뒤로</button></div>
         <div class="wizard-pills-container">
             <button class="wizard-pill pill-yoonwoo" onclick="setPersonAndTempTarget('윤우')">👦 윤우</button>
             <button class="wizard-pill pill-yoonseo" onclick="setPersonAndTempTarget('윤서')">👧 윤서</button>
@@ -696,18 +501,12 @@ function renderWizardStepTempInt() {
     `;
 }
 
-window.setPersonAndTempTarget = function(person) {
-    logState.person = person;
-    renderWizardStepTempIntChoice();
-};
+window.setPersonAndTempTarget = function(person) { logState.person = person; renderWizardStepTempIntChoice(); };
 
 function renderWizardStepTempIntChoice() {
     if (!logWizardArea) return;
     logWizardArea.innerHTML = `
-        <div class="wizard-step-header">
-            <div class="wizard-step-title">[${logState.person}] 체온 정수 선택</div>
-            <button class="wizard-back-btn" onclick="renderWizardStepTempInt()">⬅️ 뒤로</button>
-        </div>
+        <div class="wizard-step-header"><div class="wizard-step-title">[${logState.person}] 체온 정수 선택</div><button class="wizard-back-btn" onclick="renderWizardStepTempInt()">⬅️ 뒤로</button></div>
         <div class="wizard-pills-container">
             <button class="wizard-pill" onclick="selectTempInt('정상')">정상</button>
             <button class="wizard-pill" onclick="selectTempInt('37')">37°</button>
@@ -720,34 +519,23 @@ function renderWizardStepTempIntChoice() {
 
 window.selectTempInt = function(val) {
     logState.subCategory = val;
-    if (val === '정상') {
-        logState.decimal = '0';
-        renderWizardStepTime('temp');
-    } else {
-        renderWizardStepTempDec();
-    }
+    if (val === '정상') { logState.decimal = '0'; renderWizardStepTime('temp'); }
+    else { renderWizardStepTempDec(); }
 };
 
 function renderWizardStepTempDec() {
     if (!logWizardArea) return;
     let btnsHTML = '';
-    for (let i = 0; i <= 9; i++) {
-        btnsHTML += `<button class="wizard-pill" onclick="selectTempDec('${i}')">.${i}</button>`;
-    }
+    for (let i = 0; i <= 9; i++) { btnsHTML += `<button class="wizard-pill" onclick="selectTempDec('${i}')">.${i}</button>`; }
     logWizardArea.innerHTML = `
-        <div class="wizard-step-header">
-            <div class="wizard-step-title">[${logState.person}] 체온 소수점 선택 (${logState.subCategory}.X)</div>
-            <button class="wizard-back-btn" onclick="renderWizardStepTempIntChoice()">⬅️ 뒤로</button>
-        </div>
+        <div class="wizard-step-header"><div class="wizard-step-title">[${logState.person}] 체온 소수점 선택 (${logState.subCategory}.X)</div><button class="wizard-back-btn" onclick="renderWizardStepTempIntChoice()">⬅️ 뒤로</button></div>
         <div class="wizard-pills-container">${btnsHTML}</div>
     `;
 }
 
-window.selectTempDec = function(dec) {
-    logState.decimal = dec;
-    renderWizardStepTime('temp');
-};
+window.selectTempDec = function(dec) { logState.decimal = dec; renderWizardStepTime('temp'); };
 
+// --- 24시간제 선택 UI 개편 ---
 function renderWizardStepTime(type) {
     if (!logWizardArea) return;
     let backFunc = 'renderWizardStep1();';
@@ -762,14 +550,11 @@ function renderWizardStepTime(type) {
     const defaultDateStr = `${year}-${month}-${day}`;
     
     let currentH = now.getHours();
-    let isPM = currentH >= 12;
-    let displayH = currentH % 12;
-    if (displayH === 0) displayH = 12;
     const currentM = Math.floor(now.getMinutes() / 10) * 10;
 
     logWizardArea.innerHTML = `
         <div class="wizard-step-header">
-            <div class="wizard-step-title">투약/측정 날짜 및 시간 선택</div>
+            <div class="wizard-step-title">투약/측정 날짜 및 시간 선택 (24시간제)</div>
             <button class="wizard-back-btn" onclick="${backFunc}">⬅️ 뒤로</button>
         </div>
         <div class="wizard-pills-container">
@@ -782,20 +567,16 @@ function renderWizardStepTime(type) {
             <button class="wizard-pill" style="background: #7F1D1D; color: #FCA5A5; border: 1px solid #EF4444;" onclick="finalizeLog('${type}', -2)">2시간 후 (예약)</button>
         </div>
         <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px; background: rgba(255,255,255,0.08); padding: 14px; border-radius: 12px;">
-            <div style="color: #93C5FD; font-size: 15px; font-weight: 700;">📅 날짜 및 시간 직접 지정:</div>
+            <div style="color: #93C5FD; font-size: 15px; font-weight: 700;">📅 날짜 및 24시간 직접 지정:</div>
             <div style="display: flex; gap: 8px; align-items: center;">
                 <input type="date" id="customDateInput" value="${defaultDateStr}" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 8px 10px; border-radius: 8px; font-size: 15px; font-weight: bold; flex: 1;">
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
-                <div style="display: flex; gap: 4px; background: #0F172A; padding: 4px; border-radius: 10px; border: 1px solid #475569;">
-                    <button type="button" id="ampmAmBtn" onclick="setAmPm('AM')" style="padding: 8px 16px; font-size: 16px; font-weight: 800; border-radius: 8px; border: none; cursor: pointer; ${!isPM ? 'background: #3B82F6; color: white;' : 'background: transparent; color: #94A3B8;'}">오전</button>
-                    <button type="button" id="ampmPmBtn" onclick="setAmPm('PM')" style="padding: 8px 16px; font-size: 16px; font-weight: 800; border-radius: 8px; border: none; cursor: pointer; ${isPM ? 'background: #EF4444; color: white;' : 'background: transparent; color: #94A3B8;'}">오후</button>
-                </div>
-                <select id="customHourInput" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 8px 10px; border-radius: 8px; font-size: 16px; font-weight: bold;">
-                    ${generate12HourOptions(displayH)}
+                <select id="customHour24Input" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 8px 12px; border-radius: 8px; font-size: 16px; font-weight: bold; flex: 1;">
+                    ${generate24HourOptions(currentH)}
                 </select>
-                <span style="color: white; font-weight: bold; font-size: 18px;">:</span>
-                <select id="customMinuteInput" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 8px 10px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                <span style="color: white; font-weight: bold; font-size: 18px;">시</span>
+                <select id="customMinuteInput" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 8px 12px; border-radius: 8px; font-size: 16px; font-weight: bold; flex: 1;">
                     <option value="00" ${currentM === 0 ? 'selected' : ''}>00분</option>
                     <option value="10" ${currentM === 10 ? 'selected' : ''}>10분</option>
                     <option value="20" ${currentM === 20 ? 'selected' : ''}>20분</option>
@@ -809,24 +590,11 @@ function renderWizardStepTime(type) {
     `;
 }
 
-let selectedAmPmState = new Date().getHours() >= 12 ? 'PM' : 'AM';
-window.setAmPm = function(val) {
-    selectedAmPmState = val;
-    const amBtn = document.getElementById('ampmAmBtn');
-    const pmBtn = document.getElementById('ampmPmBtn');
-    if (val === 'AM') {
-        amBtn.style.background = '#3B82F6'; amBtn.style.color = 'white';
-        pmBtn.style.background = 'transparent'; pmBtn.style.color = '#94A3B8';
-    } else {
-        pmBtn.style.background = '#EF4444'; pmBtn.style.color = 'white';
-        amBtn.style.background = 'transparent'; amBtn.style.color = '#94A3B8';
-    }
-};
-
-function generate12HourOptions(selectedH) {
+function generate24HourOptions(selectedH) {
     let html = '';
-    for (let i = 1; i <= 12; i++) {
-        html += `<option value="${i}" ${i === selectedH ? 'selected' : ''}>${i}시</option>`;
+    for (let i = 0; i < 24; i++) {
+        let str = String(i).padStart(2, '0');
+        html += `<option value="${i}" ${i === selectedH ? 'selected' : ''}>${str}시</option>`;
     }
     return html;
 }
@@ -841,12 +609,10 @@ window.finalizeLog = function(type, offsetHours) {
 
 window.finalizeLogCustom = function(type) {
     const dateInputVal = document.getElementById('customDateInput').value;
-    let hourVal = parseInt(document.getElementById('customHourInput').value, 10);
+    const hourVal = parseInt(document.getElementById('customHour24Input').value, 10);
     const minuteVal = parseInt(document.getElementById('customMinuteInput').value, 10);
 
     if (!dateInputVal) { alert("날짜를 올바르게 선택해 주세요."); return; }
-    if (selectedAmPmState === 'PM' && hourVal < 12) hourVal += 12;
-    if (selectedAmPmState === 'AM' && hourVal === 12) hourVal = 0;
 
     const [year, month, day] = dateInputVal.split('-').map(Number);
     const targetDate = new Date(year, month - 1, day, hourVal, minuteVal, 0, 0);
@@ -862,7 +628,8 @@ function processAndSaveLog(type, targetDate) {
     const hours = String(targetDate.getHours()).padStart(2, '0');
     const minutes = String(targetDate.getMinutes()).padStart(2, '0');
     
-    const dateFormattedStr = `${m}/${d}(${dayName}) ${hours}:${minutes}`;
+    const dateStr = `${m}/${d}(${dayName})`;
+    const timeStr = `${hours}:${minutes}`;
     let itemClass = type === 'temp' ? 'temperature' : 'fever-reducer';
     let detailVal = logState.subCategory;
 
@@ -871,7 +638,7 @@ function processAndSaveLog(type, targetDate) {
     else if (type === 'temp') typeDescStr = `체온 측정 (${detailVal === '정상' ? '정상 체온' : detailVal + '.' + logState.decimal + '°C'})`;
     else if (type === 'general-med') typeDescStr = `약 복용 (${detailVal})`;
 
-    let rawPushText = `로그 ${logState.person} | ${typeDescStr} [${dateFormattedStr}] [token:${myClientToken}]`;
+    let rawPushText = `로그 ${logState.person} | ${typeDescStr} [${dateStr} ${timeStr}] [token:${myClientToken}]`;
     if (!isFuture) sendNtfyLog(rawPushText);
 
     globalLogsData.push({
@@ -881,7 +648,8 @@ function processAndSaveLog(type, targetDate) {
         type: type, 
         subDetail: detailVal,
         decimal: logState.decimal,
-        dateFormattedStr: dateFormattedStr,
+        dateStr: dateStr,
+        timeStr: timeStr,
         className: itemClass,
         isFuturePending: isFuture,
         rawPushText: rawPushText
@@ -909,7 +677,7 @@ function checkFutureReminders() {
             if (now >= log.timestamp) {
                 log.hasTriggered = true;
                 sendNtfyLog(log.rawPushText);
-                triggerEmergencyAlert(`[예약알림] ${log.person} - ${log.subDetail || '일정'} 도래 (${log.dateFormattedStr})`);
+                triggerEmergencyAlert(`[예약알림] ${log.person} - ${log.subDetail || '일정'} 도래 (${log.dateStr} ${log.timeStr})`);
             }
         }
     });
@@ -925,11 +693,13 @@ window.finalizeFutureDone = function(id) {
     }
 };
 
+// --- 로그 목록 UI (날짜 분리형 그룹 렌더링) ---
 function renderAllLogsUI() {
     if (!logListArea) return;
     logListArea.innerHTML = '';
     
     let chronologicalLogs = [...globalLogsData].sort((a, b) => a.timestamp - b.timestamp);
+
     chronologicalLogs.forEach((log) => {
         let sameMedIntervalStr = '';
         let crossMedIntervalStr = '';
@@ -968,43 +738,71 @@ function renderAllLogsUI() {
         return true;
     });
 
+    // 최신순 정렬
     filteredLogs.sort((a, b) => b.timestamp - a.timestamp);
 
+    // 날짜별로 그룹화
+    let groupedByDate = {};
     filteredLogs.forEach(log => {
-        const item = document.createElement('div');
-        item.className = `log-item ${log.className}`;
-
-        let personClass = 'parent'; let personIcon = '👤';
-        if (log.person === '윤우') { personClass = 'yoonwoo'; personIcon = '👦'; }
-        else if (log.person === '윤서') { personClass = 'yoonseo'; personIcon = '👧'; }
-        else if (log.person === '아빠') personIcon = '👨';
-        else if (log.person === '엄마') personIcon = '👩';
-
-        let bodyText = '';
-        if (log.type === 'fever') {
-            let medFormatted = log.subDetail === '아세트' ? '<span class="med-acet">아세트</span>' : '<span class="med-ibu">부르펜</span>';
-            bodyText = `해열제 투약 (${medFormatted})`;
-        } else if (log.type === 'temp') {
-            let tempVal = log.subDetail === '정상' ? '정상 체온' : `${log.subDetail}.${log.decimal}°C`;
-            bodyText = `체온 측정 (${tempVal})`;
-        } else if (log.type === 'general-med') {
-            bodyText = `약 복용 (<span style="color: #93C5FD; font-weight:800;">${log.subDetail}</span>)`;
-        } else {
-            bodyText = log.text || '';
-        }
-
-        item.innerHTML = `
-            <div class="log-item-left">
-                <span class="log-time-badge">⏰ ${log.dateFormattedStr}</span>
-                <span class="person-badge ${personClass}">${personIcon} ${log.person}</span>
-            </div>
-            <div class="log-item-center">
-                <div>${bodyText}</div>
-            </div>
-            <button class="log-item-delete" onclick="deleteLogItem('${log.id}')">×</button>
-        `;
-        logListArea.appendChild(item);
+        if (!groupedByDate[log.dateStr]) groupedByDate[log.dateStr] = [];
+        groupedByDate[log.dateStr].push(log);
     });
+
+    for (let dateKey in groupedByDate) {
+        // 날짜 그룹 헤더 생성
+        const dateHeader = document.createElement('div');
+        dateHeader.className = 'log-date-group-header';
+        dateHeader.innerHTML = `📅 ${dateKey}`;
+        logListArea.appendChild(dateHeader);
+
+        groupedByDate[dateKey].forEach(log => {
+            const item = document.createElement('div');
+            item.className = `log-item ${log.className}`;
+
+            let personClass = 'parent'; let personIcon = '👤';
+            if (log.person === '윤우') { personClass = 'yoonwoo'; personIcon = '👦'; }
+            else if (log.person === '윤서') { personClass = 'yoonseo'; personIcon = '👧'; }
+            else if (log.person === '아빠') personIcon = '👨';
+            else if (log.person === '엄마') personIcon = '👩';
+
+            let bodyText = '';
+            if (log.type === 'fever') {
+                let medFormatted = log.subDetail === '아세트' ? '<span class="med-acet">아세트</span>' : '<span class="med-ibu">부르펜</span>';
+                bodyText = `해열제 투약 (${medFormatted})`;
+            } else if (log.type === 'temp') {
+                let tempVal = log.subDetail === '정상' ? '정상 체온' : `${log.subDetail}.${log.decimal}°C`;
+                bodyText = `체온 측정 (${tempVal})`;
+            } else if (log.type === 'general-med') {
+                bodyText = `약 복용 (<span style="color: #93C5FD; font-weight:800;">${log.subDetail}</span>)`;
+            } else {
+                bodyText = log.text || '';
+            }
+
+            let intervalHTML = '';
+            // 체온 측정인 경우 '첫 기록' 뱃지 제외 조건 적용
+            if (!log.isFuturePending && log.type !== 'temp' && (log.sameMedIntervalStr || log.crossMedIntervalStr)) {
+                intervalHTML = `
+                    <div class="interval-badge-group">
+                        ${log.sameMedIntervalStr ? `<span class="interval-badge same-med">${log.sameMedIntervalStr}</span>` : ''}
+                        ${log.crossMedIntervalStr ? `<span class="interval-badge cross-med">${log.crossMedIntervalStr}</span>` : ''}
+                    </div>
+                `;
+            }
+
+            item.innerHTML = `
+                <div class="log-item-left">
+                    <span class="log-time-badge">⏰ ${log.timeStr}</span>
+                    <span class="person-badge ${personClass}">${personIcon} ${log.person}</span>
+                </div>
+                <div class="log-item-center">
+                    <div>${bodyText}</div>
+                    ${intervalHTML}
+                </div>
+                <button class="log-item-delete" onclick="deleteLogItem('${log.id}')">×</button>
+            `;
+            logListArea.appendChild(item);
+        });
+    }
 }
 
 window.deleteLogItem = function(id) {
@@ -1023,8 +821,7 @@ function appendLogDataDirect(dateObj, text, className, sourceLabel) {
     const dayName = daysOfWeek[dateObj.getDay()];
     const hours = String(dateObj.getHours()).padStart(2, '0');
     const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-    const dateFormattedStr = `${m}/${d}(${dayName}) ${hours}:${minutes}`;
-
+    
     globalLogsData.push({
         id: Date.now() + Math.random(),
         timestamp: dateObj,
@@ -1032,7 +829,8 @@ function appendLogDataDirect(dateObj, text, className, sourceLabel) {
         type: 'sync',
         subDetail: '',
         text: text,
-        dateFormattedStr: dateFormattedStr,
+        dateStr: `${m}/${d}(${dayName})`,
+        timeStr: `${hours}:${minutes}`,
         className: className,
         isFuturePending: false
     });
@@ -1040,8 +838,6 @@ function appendLogDataDirect(dateObj, text, className, sourceLabel) {
     updateMiniBadgeBar();
 }
 
-
-// --- 📊 로그 저장 및 불러오기 ---
 window.saveCurrentLogsToStorage = function() {
     if (globalLogsData.length === 0) { alert("저장할 로그가 없습니다."); return; }
     let sorted = [...globalLogsData].sort((a, b) => a.timestamp - b.timestamp);
@@ -1101,8 +897,6 @@ window.deleteSelectedSavedLog = function() {
     }
 };
 
-
-// --- 📈 차트 및 리포트 전환 기능 (투약 기록 X축 맞춤 플러그인 적용) ---
 let isChartViewActive = false;
 let currentChartPerson = '윤우';
 let healthChartInstance = null;
@@ -1135,10 +929,10 @@ window.renderChartForPerson = function(personName) {
 
     let labels = [];
     let tempValues = [];
-    let medicationAnnotations = []; // X축 시간에 맞춘 투약 기록 저장
+    let medicationAnnotations = [];
 
     pLogs.forEach(log => {
-        let timeLabel = `${log.timestamp.getMonth() + 1}/${log.timestamp.getDate()} ${String(log.timestamp.getHours()).padStart(2, '0')}:${String(log.timestamp.getMinutes()).padStart(2, '0')}`;
+        let timeLabel = `${log.dateStr.slice(0, 5)} ${log.timeStr}`;
         labels.push(timeLabel);
 
         if (log.type === 'temp') {
@@ -1148,7 +942,6 @@ window.renderChartForPerson = function(personName) {
             tempValues.push(null);
         }
 
-        // 투약 및 약 복용 기록 수집
         if (log.type === 'fever' || log.type === 'general-med') {
             medicationAnnotations.push(log.subDetail);
         } else {
@@ -1159,7 +952,6 @@ window.renderChartForPerson = function(personName) {
     const canvasCtx = document.getElementById('healthChartCanvas').getContext('2d');
     if (healthChartInstance) healthChartInstance.destroy();
 
-    // Chart.js 커스텀 플러그인 (X축 시간에 맞추어 차트 상단/하단에 투약명을 한글로 직접 기입)
     const medicationPlugin = {
         id: 'medicationPlugin',
         afterDatasetsDraw(chart) {
@@ -1172,7 +964,6 @@ window.renderChartForPerson = function(personName) {
                 let medName = medicationAnnotations[index];
                 if (medName) {
                     let xCoor = x.getPixelForValue(index);
-                    // 차트 상단 영역에 투약명 말풍선 스타일로 표시
                     let yCoor = y.getPixelForValue(40.2); 
 
                     ctx.fillStyle = medName === '부르펜' ? '#EF4444' : (medName === '아세트' ? '#3B82F6' : '#22C55E');
@@ -1191,7 +982,7 @@ window.renderChartForPerson = function(personName) {
         data: {
             labels: labels,
             datasets: [{
-                label: `${personName} 체온 (°C) 및 투약 기록`,
+                label: `${personName} 체온 (°C) 및 투약 기록 (24시간제)`,
                 data: tempValues,
                 borderColor: '#38BDF8',
                 backgroundColor: 'rgba(56, 189, 248, 0.2)',
@@ -1235,8 +1026,7 @@ window.renderChartForPerson = function(personName) {
     });
 };
 
-
-// --- 📊 로그전체리포트 생성 로직 ---
+// --- 📊 로그전체리포트 생성 로직 (최신 날짜 우측 정렬 반영) ---
 function buildTimelineReport() {
     if (!reportContainer) return;
     reportContainer.innerHTML = '';
@@ -1260,15 +1050,13 @@ function buildTimelineReport() {
         let dateMap = {};
 
         pLogs.forEach(log => {
-            let m = String(log.timestamp.getMonth() + 1).padStart(2, '0');
-            let d = String(log.timestamp.getDate()).padStart(2, '0');
-            let dayStr = `${m}/${d}(${daysOfWeek[log.timestamp.getDay()]})`;
-            if (!dateMap[dayStr]) dateMap[dayStr] = [];
-            dateMap[dayStr].push(log);
+            if (!dateMap[log.dateStr]) dateMap[log.dateStr] = [];
+            dateMap[log.dateStr].push(log);
         });
 
         let columnsHTML = '';
-        let sortedDateKeys = Object.keys(dateMap).sort((a, b) => new Date(b.substring(0, 5)) - new Date(a.substring(0, 5)));
+        // 최신 날짜가 우측에 오도록 오름차순(과거 -> 최신) 정렬
+        let sortedDateKeys = Object.keys(dateMap).sort((a, b) => new Date(a.substring(0, 5)) - new Date(b.substring(0, 5)));
 
         sortedDateKeys.forEach(dateKey => {
             let dayLogs = dateMap[dateKey];
@@ -1276,8 +1064,7 @@ function buildTimelineReport() {
             let rowsHTML = '';
 
             dayLogs.forEach(log => {
-                let timeStr = `${String(log.timestamp.getHours()).padStart(2, '0')}:${String(log.timestamp.getMinutes()).padStart(2, '0')}`;
-                let reportIntervalText = log.isFuturePending ? '⏰ 예약 대기중' : (log.sameMedIntervalStr || log.crossMedIntervalStr || '✨ 첫 기록');
+                let reportIntervalText = log.isFuturePending ? '⏰ 예약 대기중' : (log.type === 'temp' ? '' : (log.sameMedIntervalStr || log.crossMedIntervalStr || '✨ 첫 기록'));
 
                 let contentDesc = '';
                 if (log.type === 'fever') {
@@ -1294,7 +1081,7 @@ function buildTimelineReport() {
 
                 rowsHTML += `
                     <div class="timeline-row">
-                        <span class="timeline-time">${timeStr}</span>
+                        <span class="timeline-time">${log.timeStr}</span>
                         <span class="timeline-content">${contentDesc}</span>
                         <span class="timeline-interval">${reportIntervalText}</span>
                     </div>

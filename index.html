@@ -10,7 +10,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <!-- 가상 밝기 조절용 절전 모드 오버레이 -->
     <div class="brightness-overlay" id="brightnessOverlay"></div>
 
     <div class="bg-slideshow">
@@ -23,9 +22,8 @@
 
     <button class="settings-gear-btn" id="settingsGearBtn" title="환경설정">⚙️</button>
     
-    <!-- 건강·소통 로그 버튼 및 우측 하단 미니 요약 바 -->
     <div class="log-trigger-wrapper" id="logTriggerWrapper">
-        <button class="log-trigger-btn" id="logTriggerBtn">💊 건강·소통 로그</button>
+        <button class="log-trigger-btn" id="logTriggerBtn">💊 해열제/체온 로그</button>
         <div class="log-mini-badge-bar" id="logMiniBadgeBar" style="display: none;" onclick="openLogPanelFromMini()">
             <div class="mini-badge-circle" id="miniBadgeCount">0</div>
             <div class="mini-summary-texts" id="miniSummaryTexts">최근 로그 요약...</div>
@@ -37,7 +35,7 @@
     <div class="log-panel-backdrop" id="logPanelBackdrop">
         <div class="log-panel" id="logPanel" onclick="event.stopPropagation()">
             <div class="log-panel-header">
-                <span>📋체온/투약 로그</span>
+                <span>📋 해열제/체온 로그</span>
                 <div class="log-header-btns">
                     <button class="log-filter-btn" id="logFilterBtn">🔍 사람별 보기</button>
                     <button class="log-report-btn" id="logReportBtn">📊 로그전체리포트</button>
@@ -104,7 +102,6 @@
                 </div>
             </div>
             
-            <!-- 저장된 로그 불러오기 바 -->
             <div id="savedLogsToolbar" style="background: rgba(255,255,255,0.06); padding: 12px 20px; border-radius: 12px; margin-bottom: 16px; display: flex; align-items: center; gap: 14px;">
                 <span style="color: #93C5FD; font-weight: 700; font-size: 15px;">📂 저장된 과거 로그 불러오기:</span>
                 <select id="savedLogsSelect" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 8px 12px; border-radius: 8px; font-weight: bold; flex: 1; max-width: 400px;"></select>
@@ -115,7 +112,7 @@
             <!-- 타임라인 리포트 뷰 -->
             <div class="report-body" id="reportContainer"></div>
 
-            <!-- 차트 뷰 (기본 숨김) -->
+            <!-- 차트 뷰 -->
             <div id="reportChartContainer" style="display: none; flex: 1; flex-direction: column; gap: 16px; overflow-y: auto;">
                 <div style="display: flex; gap: 14px; align-items: center; background: rgba(255,255,255,0.05); padding: 12px 20px; border-radius: 12px;">
                     <span style="color: #FACC15; font-weight: 700; font-size: 16px;">👤 차트 대상 선택:</span>
@@ -130,7 +127,6 @@
         </div>
     </div>
 
-    <!-- 톤 다운된 날씨 위젯 -->
     <div class="top-weather-widget" id="weatherWidget">
         <div class="widget-title">🌤️ 안양시 날씨</div>
         <div class="weather-box" id="weatherBox">
@@ -145,13 +141,11 @@
         </div>
     </div>
 
-    <!-- 톤 다운된 체크리스트 바 -->
     <div class="top-checklist-bar" id="checklistBar">
         <div class="checklist-title">📋 확인한 알림 사항</div>
         <div class="checklist-items" id="checklistItems"></div>
     </div>
 
-    <!-- 화면 정중앙 은은한 다크 시계 영역 -->
     <div class="center-clock-container" id="centerClockContainer">
         <div class="center-clock" id="centerClock">00:00</div>
     </div>

@@ -532,7 +532,32 @@ body, html {
 .report-modal-backdrop.active {
     display: flex;
 }
+.report-modal-content {
+    background: #1E293B;
+    width: 95%;
+    height: 92vh;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    border: 1px solid rgba(255,255,255,0.15);
+}
 
+/* 로그 목록 날짜 그룹 구분 스타일 */
+.log-date-group-header {
+    background: rgba(59, 130, 246, 0.15);
+    color: #93C5FD;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 800;
+    margin: 12px 0 6px 0;
+    border-left: 4px solid #3B82F6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 .report-modal-content {
 background: #1E293B;
     width: 95%;
