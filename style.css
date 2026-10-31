@@ -12,6 +12,16 @@ body, html {
     background-color: #121212;
 }
 
+.brightness-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: #000000;
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 3;
+    transition: opacity 0.5s ease-in-out;
+}
+
 .bg-slideshow {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -104,7 +114,28 @@ body, html {
     border-radius: 6px;
 }
 
-/* 로그 입력 트리거 버튼 */
+.settings-gear-btn {
+    position: absolute;
+    top: 20px;
+    right: 295px;
+    background: rgba(255, 255, 255, 0.85);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 15;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease;
+}
+.settings-gear-btn:hover {
+    transform: rotate(45deg);
+}
+
 .log-trigger-btn {
     position: absolute;
     bottom: 30px;
@@ -127,13 +158,12 @@ body, html {
     transform: scale(0.95);
 }
 
-/* 로그 패널 */
 .log-panel {
     position: absolute;
     bottom: 0;
     right: 0;
-    width: 680px;
-    height: 82vh;
+    width: 920px;
+    height: 88vh;
     background: rgba(15, 23, 42, 0.96);
     backdrop-filter: blur(16px);
     border-top-left-radius: 24px;
@@ -142,7 +172,7 @@ body, html {
     z-index: 50;
     display: none;
     flex-direction: column;
-    box-shadow: -10px 0 40px rgba(0,0,0,0.6);
+    box-shadow: -15px 0 50px rgba(0,0,0,0.7);
     padding: 24px;
 }
 
@@ -151,7 +181,7 @@ body, html {
     justify-content: space-between;
     align-items: center;
     color: white;
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 700;
     border-bottom: 1px solid rgba(255,255,255,0.15);
     padding-bottom: 16px;
@@ -160,29 +190,47 @@ body, html {
 
 .log-header-btns {
     display: flex;
-    gap: 10px;
+    gap: 8px;
 }
 
 .log-report-btn {
     background: #3B82F6;
     color: white;
     border: none;
-    padding: 8px 16px;
+    padding: 8px 14px;
     font-size: 14px;
     font-weight: 700;
     border-radius: 8px;
     cursor: pointer;
 }
 
-.log-report-btn:hover {
-    background: #2563EB;
+.log-filter-btn {
+    background: #8B5CF6;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.log-hide-btn {
+    background: #64748B;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
 }
 
 .log-close-btn {
     background: #EF4444;
     color: white;
     border: none;
-    padding: 8px 16px;
+    padding: 8px 14px;
     font-size: 14px;
     font-weight: 700;
     border-radius: 8px;
@@ -211,7 +259,6 @@ body, html {
     font-weight: 700;
 }
 
-/* 뒤로 가기 소형 버튼 */
 .wizard-back-btn {
     background: rgba(255, 255, 255, 0.15);
     color: #E2E8F0;
@@ -250,12 +297,10 @@ body, html {
     transform: scale(1.05);
 }
 
-/* 대상자별 지정 색상 스타일 */
-.pill-yoonwoo { background: #BFDBFE; color: #1E3A8A; } /* 윤우: 파란색 */
-.pill-yoonseo { background: #FBCFE8; color: #831843; } /* 윤서: 핑크색 */
-.pill-parent { background: #F8FAFC; color: #0F172A; border: 1px solid #CBD5E1; } /* 엄마/아빠: 흰색 */
+.pill-yoonwoo { background: #BFDBFE; color: #1E3A8A; }
+.pill-yoonseo { background: #FBCFE8; color: #831843; }
+.pill-parent { background: #F8FAFC; color: #0F172A; border: 1px solid #CBD5E1; }
 
-/* 해열제 종류 선택 전용 테마 스타일 버튼 */
 .pill-med-acet {
     background: #FEE2E2 !important;
     color: #991B1B !important;
@@ -272,40 +317,122 @@ body, html {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     padding-right: 4px;
 }
 
 .log-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 14px 18px;
+    justify-content: space-between;
+    padding: 12px 18px;
     border-radius: 12px;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 600;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    gap: 12px;
 }
 
 .log-item.fever-reducer {
-    background: #FFEDD5;
-    color: #9A3412;
+    background: #2A1B18;
+    color: #FFEDD5;
+    border: 1px solid #7C2D12;
     border-left: 6px solid #F97316;
 }
 
 .log-item.temperature {
-    background: #E0F2FE;
-    color: #0369A1;
+    background: #182232;
+    color: #E0F2FE;
+    border: 1px solid #0C4A6E;
     border-left: 6px solid #0284C7;
 }
 
 .log-item.push-log {
-    background: #F1F5F9;
-    color: #334155;
-    border-left: 6px solid #64748B;
+    background: #1E293B;
+    color: #F1F5F9;
+    border: 1px solid #475569;
+    border-left: 6px solid #94A3B8;
 }
 
-/* 아세트: 붉은색 배경과 글씨 계열 스타일 */
+.log-item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.log-time-badge {
+    background: #090D16;
+    color: #38BDF8;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 900;
+    border: 1px solid #38BDF8;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+    letter-spacing: -0.5px;
+}
+
+.person-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 15px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.person-badge.yoonwoo {
+    background: #1D4ED8;
+    color: #FFFFFF;
+    border: 1px solid #60A5FA;
+}
+
+.person-badge.yoonseo {
+    background: #BE185D;
+    color: #FFFFFF;
+    border: 1px solid #F472B6;
+}
+
+.person-badge.parent {
+    background: #475569;
+    color: #F8FAFC;
+}
+
+.log-item-center {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    flex-wrap: wrap;
+}
+
+.interval-badge-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.interval-badge {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.interval-badge.same-med {
+    background: rgba(249, 115, 22, 0.25);
+    color: #FB923C;
+    border: 1px solid rgba(249, 115, 22, 0.5);
+}
+
+.interval-badge.cross-med {
+    background: rgba(56, 189, 248, 0.25);
+    color: #7DD3FC;
+    border: 1px solid rgba(56, 189, 248, 0.5);
+}
+
 .med-acet {
     background: #EF4444;
     color: #FFFFFF;
@@ -313,10 +440,8 @@ body, html {
     border-radius: 6px;
     font-weight: 900;
     border: 1px solid #B91C1C;
-    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);
 }
 
-/* 부르펜: 농도 누런 하얀색 배경과 검정 글씨 스타일 */
 .med-ibu {
     background: #FEF3C7;
     color: #111827;
@@ -324,21 +449,37 @@ body, html {
     border-radius: 6px;
     font-weight: 900;
     border: 1px solid #E5E7EB;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.report-keyword-fever {
+    background: #7C2D12;
+    color: #FFEDD5;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 800;
+    border: 1px solid #F97316;
+}
+
+.report-keyword-temp {
+    background: #0C4A6E;
+    color: #E0F2FE;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 800;
+    border: 1px solid #0284C7;
 }
 
 .log-item-delete {
     background: none;
     border: none;
     color: #EF4444;
-    font-size: 18px;
+    font-size: 22px;
     font-weight: bold;
     cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 2px 6px;
+    flex-shrink: 0;
 }
 
-/* 전체화면 리포트 모달 스타일 */
 .report-modal-backdrop {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -422,7 +563,7 @@ body, html {
 
 .report-columns-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
     gap: 20px;
 }
 
@@ -457,15 +598,19 @@ body, html {
     background: rgba(255, 255, 255, 0.06);
     padding: 12px 16px;
     border-radius: 10px;
-    font-size: 17px;
+    font-size: 16px;
     color: #E2E8F0;
     justify-content: space-between;
+    gap: 10px;
 }
 
 .timeline-time {
-    font-weight: 700;
+    font-weight: 900;
     color: #38BDF8;
-    width: 90px;
+    background: #090D16;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #38BDF8;
 }
 
 .timeline-content {
@@ -474,19 +619,18 @@ body, html {
 }
 
 .timeline-interval {
-    font-size: 13px;
-    color: #94A3B8;
-    background: rgba(0,0,0,0.4);
-    padding: 4px 10px;
-    border-radius: 15px;
-    font-weight: 600;
+    font-size: 12px;
+    color: #FACC15;
+    background: rgba(0,0,0,0.5);
+    padding: 4px 8px;
+    border-radius: 10px;
+    font-weight: 700;
 }
 
-/* 날씨 위젯 */
 .top-weather-widget {
     position: absolute;
     top: 20px;
-    right: 20px;
+    right: 345px;
     width: 260px;
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(12px);
@@ -538,7 +682,7 @@ body, html {
     position: absolute;
     top: 20px;
     left: 20px;
-    right: 300px;
+    right: 625px;
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(10px);
     border-radius: 16px;
@@ -614,7 +758,6 @@ body, html {
     padding: 4px 8px;
 }
 
-/* 메인 시계 및 크레딧 문구 스타일 */
 .main-idle-content {
     position: absolute;
     bottom: 40px;
@@ -659,7 +802,6 @@ body, html {
     text-shadow: 0 2px 8px rgba(0,0,0,0.6);
 }
 
-/* 알림 팝업 모달 */
 .modal-backdrop {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -716,19 +858,19 @@ body, html {
 
 @keyframes urgentFlash {
     0% {
-        background: rgba(185, 28, 28, 0.98);
-        box-shadow: 0 0 80px rgba(239, 68, 68, 1);
-        border-color: #FCA5A5;
+        background: rgba(255, 255, 255, 0.98);
+        box-shadow: 0 0 120px rgba(255, 255, 255, 1);
+        border-color: #EF4444;
     }
     50% {
-        background: rgba(20, 20, 20, 0.98);
+        background: rgba(185, 28, 28, 0.98);
         box-shadow: 0 0 160px rgba(250, 204, 21, 1);
         border-color: #FACC15;
     }
     100% {
-        background: rgba(185, 28, 28, 0.98);
-        box-shadow: 0 0 80px rgba(239, 68, 68, 1);
-        border-color: #FCA5A5;
+        background: rgba(255, 255, 255, 0.98);
+        box-shadow: 0 0 120px rgba(255, 255, 255, 1);
+        border-color: #EF4444;
     }
 }
 
@@ -745,22 +887,22 @@ body, html {
 
 .unconfirmed-time {
     font-size: 42px;
-    color: #FEF08A;
+    color: #1E293B;
     font-weight: 800;
 }
 
 .unconfirmed-msg {
-    color: #FFFFFF;
-    font-size: 110px;
+    color: #0F172A;
+    font-size: 120px;
     font-weight: 900;
     line-height: 1.2;
     word-break: keep-all;
-    text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    text-shadow: 0 2px 10px rgba(255,255,255,0.8);
 }
 
 .modal-confirm-btn {
-    background-color: #FACC15;
-    color: #713F12;
+    background-color: #EF4444;
+    color: #FFFFFF;
     border: none;
     padding: 30px 80px;
     font-size: 50px;
@@ -768,7 +910,7 @@ body, html {
     border-radius: 60px;
     cursor: pointer;
     align-self: flex-end;
-    box-shadow: 0 8px 40px rgba(250, 204, 21, 0.8);
+    box-shadow: 0 8px 40px rgba(239, 68, 68, 0.8);
     transition: transform 0.1s ease;
 }
 

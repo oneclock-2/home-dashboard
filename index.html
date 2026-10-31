@@ -8,25 +8,27 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 배경 사진 슬라이드 영역 -->
+    <!-- 가상 밝기 조절용 절전 모드 오버레이 -->
+    <div class="brightness-overlay" id="brightnessOverlay"></div>
+
     <div class="bg-slideshow">
         <div class="slide active" style="background-image: url('photo1.jpg');"></div>
         <div class="slide" style="background-image: url('photo2.jpg');"></div>
     </div>
     <div class="bg-overlay"></div>
 
-    <!-- 배경에 부착된 포스트잇들이 표시되는 영역 -->
     <div class="sticky-notes-container" id="stickyNotesContainer"></div>
 
-    <!-- 우측 하단: 로그 입력 버튼 -->
+    <button class="settings-gear-btn" id="settingsGearBtn" title="환경설정">⚙️</button>
     <button class="log-trigger-btn" id="logTriggerBtn">📝 로그입력</button>
 
-    <!-- 어두운 바탕의 로그 패널 (메모장) -->
     <div class="log-panel" id="logPanel">
         <div class="log-panel-header">
-            <span>📋체온/해열제 로그</span>
+            <span>📋해열제/체온 로그</span>
             <div class="log-header-btns">
-                <button class="log-report-btn" id="logReportBtn">📊 전체보기</button>
+                <button class="log-filter-btn" id="logFilterBtn">🔍 사람별 보기</button>
+                <button class="log-report-btn" id="logReportBtn">📊 로그전체리포트</button>
+                <button class="log-hide-btn" id="logHideBtn">로그 숨기기</button>
                 <button class="log-close-btn" id="logCloseBtn">전체삭제 및 닫기</button>
             </div>
         </div>
@@ -34,20 +36,49 @@
         <div class="log-list-area" id="logListArea"></div>
     </div>
 
-    <!-- 전체화면 건강 리포트 모달 (날짜별 컬럼 구조) -->
+    <!-- 환경설정 모달 -->
+    <div class="report-modal-backdrop" id="settingsModal">
+        <div class="report-modal-content" style="max-width: 500px; height: auto;">
+            <div class="report-header">
+                <h2>⚙️ 대시보드 환경설정</h2>
+                <button class="report-close-btn" id="settingsCloseBtn">✕ 닫기</button>
+            </div>
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 24px; color: white;">
+                <div>
+                    <label style="font-size: 18px; font-weight: 700; color: #93C5FD; display: block; margin-bottom: 10px;">🚨 긴급 알림 글씨 크기 설정</label>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="wizard-pill" onclick="changeAlertFontSize('90px')">보통 (90px)</button>
+                        <button class="wizard-pill" onclick="changeAlertFontSize('120px')" style="background: #3B82F6; color: white;">크게 (120px)</button>
+                        <button class="wizard-pill" onclick="changeAlertFontSize('150px')" style="background: #EF4444; color: white;">아주 크게 (150px)</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-size: 18px; font-weight: 700; color: #93C5FD; display: block; margin-bottom: 10px;">🌙 절전 모드 최소 밝기 조절</label>
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <span style="font-size: 14px; color: #94A3B8;">밝음</span>
+                        <input type="range" id="brightnessRange" min="0" max="0.85" step="0.05" value="0.6" style="flex: 1; accent-color: #3B82F6; height: 8px; cursor: pointer;" oninput="updateBrightnessLevel(this.value)">
+                        <span style="font-size: 14px; color: #94A3B8;">어두움</span>
+                    </div>
+                </div>
+
+                <div style="font-size: 13px; color: #94A3B8; line-height: 1.5; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+                    💡 <b>절전 모드 안내:</b> 화면을 터치하지 않고 10초가 지나면 설정한 최소 밝기(어두운 화면)로 자동 전환되며, 화면을 터치하는 순간 중간 밝기로 켜집니다.
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="report-modal-backdrop" id="reportModal">
         <div class="report-modal-content">
             <div class="report-header">
                 <h2>📊 아이들 해열제 투약 및 체온 날짜별 타임라인 리포트</h2>
                 <button class="report-close-btn" id="reportCloseBtn">✕ 닫기</button>
             </div>
-            <div class="report-body" id="reportContainer">
-                <!-- 날짜별 컬럼 타임라인이 동적으로 채워집니다 -->
-            </div>
+            <div class="report-body" id="reportContainer"></div>
         </div>
     </div>
 
-    <!-- 우측 상단: 날씨 위젯 -->
     <div class="top-weather-widget" id="weatherWidget">
         <div class="widget-title">🌤️ 안양시 날씨</div>
         <div class="weather-box" id="weatherBox">
@@ -62,13 +93,11 @@
         </div>
     </div>
 
-    <!-- 상단 확인된 체크리스트 영역 -->
     <div class="top-checklist-bar" id="checklistBar">
         <div class="checklist-title">📋 확인한 알림 사항</div>
         <div class="checklist-items" id="checklistItems"></div>
     </div>
 
-    <!-- 메인 화면 시계 및 크레딧 문구 (크기 대폭 확대) -->
     <div class="main-idle-content">
         <div class="clock" id="clock">00:00</div>
         <div class="status-badge-wrapper">
@@ -77,7 +106,6 @@
         </div>
     </div>
 
-    <!-- 초강력 번쩍이는 알림 팝업 모달 -->
     <div class="modal-backdrop" id="messageModal">
         <div class="modal-content">
             <div class="modal-tag">🚨 새로운 긴급 알림 🚨</div>
