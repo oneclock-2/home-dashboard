@@ -6,6 +6,8 @@
     <title>윤우윤서네 대시보드</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
+    <!-- 📊 Chart.js 라이브러리 연동 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <!-- 가상 밝기 조절용 절전 모드 오버레이 -->
@@ -35,7 +37,7 @@
     <div class="log-panel-backdrop" id="logPanelBackdrop">
         <div class="log-panel" id="logPanel" onclick="event.stopPropagation()">
             <div class="log-panel-header">
-                <span>📋 우리집 건강·소통 로그</span>
+                <span>📋체온/투약 로그</span>
                 <div class="log-header-btns">
                     <button class="log-filter-btn" id="logFilterBtn">🔍 사람별 보기</button>
                     <button class="log-report-btn" id="logReportBtn">📊 로그전체리포트</button>
@@ -90,13 +92,41 @@
         </div>
     </div>
 
+    <!-- 📊 리포트 및 차트 모달 -->
     <div class="report-modal-backdrop" id="reportModal">
         <div class="report-modal-content">
             <div class="report-header">
-                <h2>📊 아이들 투약 및 체온 날짜별 타임라인 리포트</h2>
-                <button class="report-close-btn" id="reportCloseBtn">✕ 닫기</button>
+                <h2>📊 아이들 투약 및 체온 타임라인 리포트 & 차트</h2>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="wizard-pill" style="background: #22C55E; color: white; padding: 10px 16px; font-size: 15px;" onclick="saveCurrentLogsToStorage()">💾 현재 로그 저장하기</button>
+                    <button class="wizard-pill" style="background: #8B5CF6; color: white; padding: 10px 16px; font-size: 15px;" id="toggleReportChartBtn" onclick="toggleReportView()">📈 차트보기</button>
+                    <button class="report-close-btn" id="reportCloseBtn">✕ 닫기</button>
+                </div>
             </div>
+            
+            <!-- 저장된 로그 불러오기 바 -->
+            <div id="savedLogsToolbar" style="background: rgba(255,255,255,0.06); padding: 12px 20px; border-radius: 12px; margin-bottom: 16px; display: flex; align-items: center; gap: 14px;">
+                <span style="color: #93C5FD; font-weight: 700; font-size: 15px;">📂 저장된 과거 로그 불러오기:</span>
+                <select id="savedLogsSelect" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 8px 12px; border-radius: 8px; font-weight: bold; flex: 1; max-width: 400px;"></select>
+                <button class="wizard-pill" style="background: #3B82F6; color: white; padding: 8px 16px; font-size: 14px;" onclick="loadSelectedSavedLogs()">불러오기</button>
+                <button class="wizard-pill" style="background: #DC2626; color: white; padding: 8px 14px; font-size: 14px;" onclick="deleteSelectedSavedLog()">삭제</button>
+            </div>
+
+            <!-- 타임라인 리포트 뷰 -->
             <div class="report-body" id="reportContainer"></div>
+
+            <!-- 차트 뷰 (기본 숨김) -->
+            <div id="reportChartContainer" style="display: none; flex: 1; flex-direction: column; gap: 16px; overflow-y: auto;">
+                <div style="display: flex; gap: 14px; align-items: center; background: rgba(255,255,255,0.05); padding: 12px 20px; border-radius: 12px;">
+                    <span style="color: #FACC15; font-weight: 700; font-size: 16px;">👤 차트 대상 선택:</span>
+                    <button class="wizard-pill pill-yoonwoo" onclick="renderChartForPerson('윤우')">👦 윤우</button>
+                    <button class="wizard-pill pill-yoonseo" onclick="renderChartForPerson('윤서')">👧 윤서</button>
+                    <span id="chartTargetName" style="color: white; font-weight: 800; font-size: 18px; margin-left: 10px;">(현재: 윤우)</span>
+                </div>
+                <div style="flex: 1; background: #0F172A; border-radius: 16px; padding: 20px; position: relative; min-height: 450px; border: 1px solid rgba(255,255,255,0.1);">
+                    <canvas id="healthChartCanvas"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 

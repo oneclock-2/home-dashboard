@@ -13,6 +13,66 @@ let logState = {
     timeOffset: 0   
 };
 
+// --- 🌟 5일치 윤우·윤서 아팠을 때 목업 테스트 데이터 자동 로드 ---
+function loadMockTestData() {
+    const baseTime = new Date();
+    const mockItems = [
+        // 5일 전 (윤우 고열 및 부르펜 투약)
+        { daysAgo: 5, hour: 9, person: '윤우', type: 'temp', subDetail: '39', decimal: '2' },
+        { daysAgo: 5, hour: 9, person: '윤우', type: 'fever', subDetail: '부르펜' },
+        { daysAgo: 5, hour: 13, person: '윤우', type: 'temp', subDetail: '38', decimal: '5' },
+        { daysAgo: 5, hour: 17, person: '윤우', type: 'general-med', subDetail: '항생제' },
+        { daysAgo: 5, hour: 21, person: '윤우', type: 'fever', subDetail: '아세트' },
+
+        // 4일 전 (윤우 호전세 및 윤서 미열 시작)
+        { daysAgo: 4, hour: 8, person: '윤우', type: 'temp', subDetail: '37', decimal: '5' },
+        { daysAgo: 4, hour: 10, person: '윤서', type: 'temp', subDetail: '39', decimal: '0' },
+        { daysAgo: 4, hour: 10, person: '윤서', type: 'fever', subDetail: '부르펜' },
+        { daysAgo: 4, hour: 15, person: '윤서', type: 'temp', subDetail: '38', decimal: '2' },
+        { daysAgo: 4, hour: 20, person: '윤서', type: 'general-med', subDetail: '유산균/비타민' },
+
+        // 3일 전
+        { daysAgo: 3, hour: 9, person: '윤우', type: 'temp', subDetail: '정상', decimal: '0' },
+        { daysAgo: 3, hour: 9, person: '윤서', type: 'temp', subDetail: '38', decimal: '1' },
+        { daysAgo: 3, hour: 14, person: '윤서', type: 'fever', subDetail: '아세트' },
+        { daysAgo: 3, hour: 19, person: '윤서', type: 'temp', subDetail: '37', decimal: '4' },
+
+        // 2일 전
+        { daysAgo: 2, hour: 10, person: '윤서', type: 'temp', subDetail: '정상', decimal: '0' },
+        { daysAgo: 2, hour: 14, person: '윤우', type: 'general-med', subDetail: '처방약' },
+
+        // 오늘 (현재 기준)
+        { daysAgo: 0, hour: 8, person: '윤우', type: 'temp', subDetail: '정상', decimal: '0' },
+        { daysAgo: 0, hour: 8, person: '윤서', type: 'temp', subDetail: '정상', decimal: '0' }
+    ];
+
+    mockItems.forEach(m => {
+        let tDate = new Date(baseTime.getTime() - m.daysAgo * 24 * 3600000);
+        tDate.setHours(m.hour, 0, 0, 0);
+
+        let itemClass = m.type === 'fever' ? 'fever-reducer' : (m.type === 'temp' ? 'temperature' : 'general-med');
+        let mMonth = String(tDate.getMonth() + 1).padStart(2, '0');
+        let mDay = String(tDate.getDate()).padStart(2, '0');
+        let dateFormattedStr = `${mMonth}/${mDay}(${daysOfWeek[tDate.getDay()]}) ${String(m.hour).padStart(2, '0')}:00`;
+
+        globalLogsData.push({
+            id: Date.now() + Math.random(),
+            timestamp: tDate,
+            person: m.person,
+            type: m.type,
+            subDetail: m.subDetail,
+            decimal: m.decimal || '0',
+            dateFormattedStr: dateFormattedStr,
+            className: itemClass,
+            isFuturePending: false,
+            rawPushText: `목업로그 ${m.person} | ${m.type}`
+        });
+    });
+}
+
+loadMockTestData();
+
+
 // --- 시계 작동 (정중앙 시계 갱신 및 예약 알림 체크) ---
 function updateClock() {
     const now = new Date();
@@ -103,7 +163,7 @@ fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 
 
-// --- 🌙 미사용 시 절전모드 (가상 밝기 제어 및 시계 추가 어두워짐 연동) ---
+// --- 🌙 미사용 시 절전모드 ---
 const brightnessOverlay = document.getElementById('brightnessOverlay');
 let minBrightness = 0.6; 
 let sleepTimer = null;
@@ -126,7 +186,7 @@ window.addEventListener('click', wakeUpScreen);
 wakeUpScreen();
 
 
-// --- 환경설정 및 볼륨 증폭 제어 ---
+// --- 환경설정 및 볼륨 제어 ---
 const settingsGearBtn = document.getElementById('settingsGearBtn');
 const settingsModal = document.getElementById('settingsModal');
 const settingsCloseBtn = document.getElementById('settingsCloseBtn');
@@ -194,7 +254,6 @@ const checklistItems = document.getElementById('checklistItems');
 const stickyNotesContainer = document.getElementById('stickyNotesContainer');
 
 const myClientToken = 'tablet-' + Math.random().toString(36).substring(2, 9);
-
 const eventSource = new EventSource(`https://ntfy.sh/${NTFY_CHANNEL}/sse`);
 
 eventSource.onmessage = function(event) {
@@ -202,10 +261,7 @@ eventSource.onmessage = function(event) {
         const data = JSON.parse(event.data);
         if (data.event === 'message' && data.message) {
             if (data.message.startsWith('[확인완료]')) return; 
-
-            if (data.message.includes(`[token:${myClientToken}]`)) {
-                return;
-            }
+            if (data.message.includes(`[token:${myClientToken}]`)) return;
 
             if (data.message.startsWith('로그') || data.message.includes('로그')) {
                 const cleanMsg = data.message.replace(/\[token:[^\]]+\]/, '').replace(/^로그\s*/, '').trim();
@@ -224,10 +280,7 @@ eventSource.onmessage = function(event) {
                 return;
             }
 
-            if (data.message.includes('경적')) {
-                playAlertSound();
-            }
-
+            if (data.message.includes('경적')) playAlertSound();
             triggerEmergencyAlert(data.message);
         }
     } catch (e) {
@@ -239,12 +292,7 @@ function triggerEmergencyAlert(messageText) {
     const now = new Date();
     const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     
-    const newItem = {
-        id: Date.now() + Math.random(),
-        text: messageText,
-        time: timeString
-    };
-
+    const newItem = { id: Date.now() + Math.random(), text: messageText, time: timeString };
     unconfirmedList.push(newItem);
     playAlertSound();
     renderUnconfirmedModal();
@@ -311,9 +359,7 @@ function sendNtfyResponse(text, time) {
     fetch(`https://ntfy.sh/${NTFY_CHANNEL}`, {
         method: 'POST',
         body: `[확인완료] "${text}" (수신시각: ${time}) [token:${myClientToken}]`
-    }).catch(err => {
-        console.log("Ntfy response push failed:", err);
-    });
+    }).catch(err => { console.log(err); });
 }
 
 function addToChecklist(text, receiveTime, confirmTime) {
@@ -373,7 +419,7 @@ function createStickyNote(text, time) {
 }
 
 
-// --- 📝 건강·소통 로그 시스템 및 미래 예약 알림 관리 ---
+// --- 📝 건강·소통 로그 시스템 ---
 const logTriggerBtn = document.getElementById('logTriggerBtn');
 const logPanelBackdrop = document.getElementById('logPanelBackdrop');
 const logHideBtn = document.getElementById('logHideBtn');
@@ -437,21 +483,23 @@ window.openLogPanelFromMini = function() {
 
 if (logReportBtn) {
     logReportBtn.onclick = () => {
+        isChartViewActive = false;
+        document.getElementById('reportContainer').style.display = 'flex';
+        document.getElementById('reportChartContainer').style.display = 'none';
+        document.getElementById('toggleReportChartBtn').innerText = '📈 차트보기';
+        
         buildTimelineReport();
+        updateSavedLogsDropdown();
         if (reportModal) reportModal.classList.add('active');
     };
 }
 
 if (logFilterBtn) {
-    logFilterBtn.onclick = () => {
-        renderFilterWizard();
-    };
+    logFilterBtn.onclick = () => { renderFilterWizard(); };
 }
 
 if (reportCloseBtn) {
-    reportCloseBtn.onclick = () => {
-        if (reportModal) reportModal.classList.remove('active');
-    };
+    reportCloseBtn.onclick = () => { if (reportModal) reportModal.classList.remove('active'); };
 }
 
 function updateMiniBadgeBar() {
@@ -484,7 +532,7 @@ function renderFilterWizard() {
     if (!logWizardArea) return;
     logWizardArea.innerHTML = `
         <div class="wizard-step-header">
-            <div class="wizard-step-title">📊 사람별/종류별 로그 필터 (엑셀 필터)</div>
+            <div class="wizard-step-title">📊 사람별/종류별 로그 필터</div>
             <button class="wizard-back-btn" onclick="resetWizard()">⬅️ 입력으로 돌아가기</button>
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
@@ -536,24 +584,9 @@ function renderWizardStep1() {
 
 window.selectCategory = function(cat) {
     logState.category = cat;
-    if (cat === '해열제') {
-        renderWizardStepFeverMed();
-    } else if (cat === '약') {
-        renderWizardStepGeneralMed();
-    } else {
-        renderWizardStepTempInt();
-    }
-};
-
-window.selectPerson = function(person) {
-    logState.person = person;
-    if (logState.category === '해열제') {
-        renderWizardStepFeverMed();
-    } else if (logState.category === '약') {
-        renderWizardStepGeneralMed();
-    } else {
-        renderWizardStepTempInt();
-    }
+    if (cat === '해열제') renderWizardStepFeverMed();
+    else if (cat === '약') renderWizardStepGeneralMed();
+    else renderWizardStepTempInt();
 };
 
 function renderWizardStepFeverMed() {
@@ -574,11 +607,8 @@ function renderWizardStepFeverMed() {
 
 window.setPersonAndProceed = function(person, mode) {
     logState.person = person;
-    if (mode === 'fever') {
-        renderWizardStepFeverMedChoice();
-    } else if (mode === 'gen') {
-        renderWizardStepGeneralMedChoice();
-    }
+    if (mode === 'fever') renderWizardStepFeverMedChoice();
+    else if (mode === 'gen') renderWizardStepGeneralMedChoice();
 };
 
 function renderWizardStepFeverMedChoice() {
@@ -644,10 +674,7 @@ window.selectGeneralMed = function(medName) {
 
 window.submitCustomGeneralMed = function() {
     const inputVal = document.getElementById('customMedInput').value.trim();
-    if (!inputVal) {
-        alert("약 이름을 입력해 주세요.");
-        return;
-    }
+    if (!inputVal) { alert("약 이름을 입력해 주세요."); return; }
     logState.subCategory = inputVal;
     renderWizardStepTime('general-med');
 };
@@ -712,9 +739,7 @@ function renderWizardStepTempDec() {
             <div class="wizard-step-title">[${logState.person}] 체온 소수점 선택 (${logState.subCategory}.X)</div>
             <button class="wizard-back-btn" onclick="renderWizardStepTempIntChoice()">⬅️ 뒤로</button>
         </div>
-        <div class="wizard-pills-container">
-            ${btnsHTML}
-        </div>
+        <div class="wizard-pills-container">${btnsHTML}</div>
     `;
 }
 
@@ -758,17 +783,14 @@ function renderWizardStepTime(type) {
         </div>
         <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px; background: rgba(255,255,255,0.08); padding: 14px; border-radius: 12px;">
             <div style="color: #93C5FD; font-size: 15px; font-weight: 700;">📅 날짜 및 시간 직접 지정:</div>
-            
             <div style="display: flex; gap: 8px; align-items: center;">
                 <input type="date" id="customDateInput" value="${defaultDateStr}" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 8px 10px; border-radius: 8px; font-size: 15px; font-weight: bold; flex: 1;">
             </div>
-
             <div style="display: flex; gap: 10px; align-items: center;">
                 <div style="display: flex; gap: 4px; background: #0F172A; padding: 4px; border-radius: 10px; border: 1px solid #475569;">
                     <button type="button" id="ampmAmBtn" onclick="setAmPm('AM')" style="padding: 8px 16px; font-size: 16px; font-weight: 800; border-radius: 8px; border: none; cursor: pointer; ${!isPM ? 'background: #3B82F6; color: white;' : 'background: transparent; color: #94A3B8;'}">오전</button>
                     <button type="button" id="ampmPmBtn" onclick="setAmPm('PM')" style="padding: 8px 16px; font-size: 16px; font-weight: 800; border-radius: 8px; border: none; cursor: pointer; ${isPM ? 'background: #EF4444; color: white;' : 'background: transparent; color: #94A3B8;'}">오후</button>
                 </div>
-
                 <select id="customHourInput" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 8px 10px; border-radius: 8px; font-size: 16px; font-weight: bold;">
                     ${generate12HourOptions(displayH)}
                 </select>
@@ -781,7 +803,6 @@ function renderWizardStepTime(type) {
                     <option value="40" ${currentM === 40 ? 'selected' : ''}>40분</option>
                     <option value="50" ${currentM === 50 ? 'selected' : ''}>50분</option>
                 </select>
-
                 <button class="wizard-pill" style="padding: 10px 18px; font-size: 15px; background: #22C55E; color: white;" onclick="finalizeLogCustom('${type}')">적용</button>
             </div>
         </div>
@@ -789,21 +810,16 @@ function renderWizardStepTime(type) {
 }
 
 let selectedAmPmState = new Date().getHours() >= 12 ? 'PM' : 'AM';
-
 window.setAmPm = function(val) {
     selectedAmPmState = val;
     const amBtn = document.getElementById('ampmAmBtn');
     const pmBtn = document.getElementById('ampmPmBtn');
     if (val === 'AM') {
-        amBtn.style.background = '#3B82F6';
-        amBtn.style.color = 'white';
-        pmBtn.style.background = 'transparent';
-        pmBtn.style.color = '#94A3B8';
+        amBtn.style.background = '#3B82F6'; amBtn.style.color = 'white';
+        pmBtn.style.background = 'transparent'; pmBtn.style.color = '#94A3B8';
     } else {
-        pmBtn.style.background = '#EF4444';
-        pmBtn.style.color = 'white';
-        amBtn.style.background = 'transparent';
-        amBtn.style.color = '#94A3B8';
+        pmBtn.style.background = '#EF4444'; pmBtn.style.color = 'white';
+        amBtn.style.background = 'transparent'; amBtn.style.color = '#94A3B8';
     }
 };
 
@@ -816,12 +832,10 @@ function generate12HourOptions(selectedH) {
 }
 
 window.finalizeLog = function(type, offsetHours) {
-    // offsetHours가 음수이면 미래 시간 (예: -0.5는 30분 후)
     let targetDate = new Date(Date.now() - offsetHours * 3600000);
     let m = targetDate.getMinutes();
     let flooredM = Math.floor(m / 10) * 10;
     targetDate.setMinutes(flooredM, 0, 0);
-
     processAndSaveLog(type, targetDate);
 };
 
@@ -830,24 +844,18 @@ window.finalizeLogCustom = function(type) {
     let hourVal = parseInt(document.getElementById('customHourInput').value, 10);
     const minuteVal = parseInt(document.getElementById('customMinuteInput').value, 10);
 
-    if (!dateInputVal) {
-        alert("날짜를 올바르게 선택해 주세요.");
-        return;
-    }
-
+    if (!dateInputVal) { alert("날짜를 올바르게 선택해 주세요."); return; }
     if (selectedAmPmState === 'PM' && hourVal < 12) hourVal += 12;
     if (selectedAmPmState === 'AM' && hourVal === 12) hourVal = 0;
 
     const [year, month, day] = dateInputVal.split('-').map(Number);
     const targetDate = new Date(year, month - 1, day, hourVal, minuteVal, 0, 0);
-
     processAndSaveLog(type, targetDate);
 };
 
 function processAndSaveLog(type, targetDate) {
     const now = new Date();
     const isFuture = targetDate > now;
-
     const m = String(targetDate.getMonth() + 1).padStart(2, '0');
     const d = String(targetDate.getDate()).padStart(2, '0');
     const dayName = daysOfWeek[targetDate.getDay()];
@@ -855,11 +863,7 @@ function processAndSaveLog(type, targetDate) {
     const minutes = String(targetDate.getMinutes()).padStart(2, '0');
     
     const dateFormattedStr = `${m}/${d}(${dayName}) ${hours}:${minutes}`;
-
-    let itemClass = 'fever-reducer';
-    if (type === 'temp') itemClass = 'temperature';
-    else if (type === 'general-med') itemClass = 'general-med';
-
+    let itemClass = type === 'temp' ? 'temperature' : 'fever-reducer';
     let detailVal = logState.subCategory;
 
     let typeDescStr = '';
@@ -868,11 +872,9 @@ function processAndSaveLog(type, targetDate) {
     else if (type === 'general-med') typeDescStr = `약 복용 (${detailVal})`;
 
     let rawPushText = `로그 ${logState.person} | ${typeDescStr} [${dateFormattedStr}] [token:${myClientToken}]`;
-    if (!isFuture) {
-        sendNtfyLog(rawPushText);
-    }
+    if (!isFuture) sendNtfyLog(rawPushText);
 
-    const newLogItem = {
+    globalLogsData.push({
         id: Date.now() + Math.random(),
         timestamp: targetDate,
         person: logState.person,
@@ -883,16 +885,12 @@ function processAndSaveLog(type, targetDate) {
         className: itemClass,
         isFuturePending: isFuture,
         rawPushText: rawPushText
-    };
+    });
 
-    globalLogsData.push(newLogItem);
     renderAllLogsUI();
     updateMiniBadgeBar();
     resetWizard();
-
-    if (isFuture) {
-        alert(`[미래 예약 로그 등록 완료]\n지정한 시간이 되면 알림이 발송되도록 예약되었습니다.`);
-    }
+    if (isFuture) alert(`[미래 예약 로그 등록 완료]\n지정한 시간이 되면 알림이 발송되도록 예약되었습니다.`);
 }
 
 window.triggerFutureReminder = function(id) {
@@ -931,9 +929,7 @@ function renderAllLogsUI() {
     if (!logListArea) return;
     logListArea.innerHTML = '';
     
-    const now = new Date();
     let chronologicalLogs = [...globalLogsData].sort((a, b) => a.timestamp - b.timestamp);
-
     chronologicalLogs.forEach((log) => {
         let sameMedIntervalStr = '';
         let crossMedIntervalStr = '';
@@ -942,11 +938,9 @@ function renderAllLogsUI() {
             let prevSameMedLog = chronologicalLogs
                 .filter(l => l.timestamp < log.timestamp && l.person === log.person && l.type === 'fever' && l.subDetail === log.subDetail && !l.isFuturePending)
                 .pop();
-
             if (prevSameMedLog) {
                 let diffMins = Math.round((log.timestamp - prevSameMedLog.timestamp) / 60000);
-                let h = Math.floor(diffMins / 60);
-                let m = diffMins % 60;
+                let h = Math.floor(diffMins / 60); let m = diffMins % 60;
                 sameMedIntervalStr = `⏳ ${log.subDetail} 간격: ${h > 0 ? h + '시간 ' : ''}${m}분`;
             }
 
@@ -954,15 +948,12 @@ function renderAllLogsUI() {
             let prevCrossMedLog = chronologicalLogs
                 .filter(l => l.timestamp < log.timestamp && l.person === log.person && l.type === 'fever' && l.subDetail === otherMedName && !l.isFuturePending)
                 .pop();
-
             if (prevCrossMedLog) {
                 let diffMins = Math.round((log.timestamp - prevCrossMedLog.timestamp) / 60000);
-                let h = Math.floor(diffMins / 60);
-                let m = diffMins % 60;
+                let h = Math.floor(diffMins / 60); let m = diffMins % 60;
                 crossMedIntervalStr = `⏳ (${otherMedName} 교차: ${h > 0 ? h + '시간 ' : ''}${m}분)`;
             }
         }
-
         log.sameMedIntervalStr = sameMedIntervalStr;
         log.crossMedIntervalStr = crossMedIntervalStr;
     });
@@ -983,57 +974,23 @@ function renderAllLogsUI() {
         const item = document.createElement('div');
         item.className = `log-item ${log.className}`;
 
-        let personClass = 'parent';
-        let personIcon = '👤';
-        if (log.person === '윤우') {
-            personClass = 'yoonwoo';
-            personIcon = '👦';
-        } else if (log.person === '윤서') {
-            personClass = 'yoonseo';
-            personIcon = '👧';
-        } else if (log.person === '아빠') {
-            personIcon = '👨';
-        } else if (log.person === '엄마') {
-            personIcon = '👩';
-        }
+        let personClass = 'parent'; let personIcon = '👤';
+        if (log.person === '윤우') { personClass = 'yoonwoo'; personIcon = '👦'; }
+        else if (log.person === '윤서') { personClass = 'yoonseo'; personIcon = '👧'; }
+        else if (log.person === '아빠') personIcon = '👨';
+        else if (log.person === '엄마') personIcon = '👩';
 
         let bodyText = '';
         if (log.type === 'fever') {
-            let medFormatted = log.subDetail === '아세트' ? 
-                '<span class="med-acet">아세트</span>' : 
-                '<span class="med-ibu">부르펜</span>';
+            let medFormatted = log.subDetail === '아세트' ? '<span class="med-acet">아세트</span>' : '<span class="med-ibu">부르펜</span>';
             bodyText = `해열제 투약 (${medFormatted})`;
         } else if (log.type === 'temp') {
             let tempVal = log.subDetail === '정상' ? '정상 체온' : `${log.subDetail}.${log.decimal}°C`;
             bodyText = `체온 측정 (${tempVal})`;
         } else if (log.type === 'general-med') {
-            // 약 복용 텍스트를 눈에 잘 띄는 밝은 색상으로 스타일링
             bodyText = `약 복용 (<span style="color: #93C5FD; font-weight:800;">${log.subDetail}</span>)`;
         } else {
             bodyText = log.text || '';
-        }
-
-        let actionButtonsHTML = '';
-        if (log.isFuturePending) {
-            let isTimePassed = now >= log.timestamp;
-            let reminderStatusText = log.reminderScheduled ? `<span style="font-size: 12px; color: #38BDF8; font-weight: 700;">(알림예약됨)</span>` : '';
-            
-            actionButtonsHTML = `
-                <div style="display: flex; gap: 6px; align-items: center; margin-top: 6px;">
-                    ${!log.reminderScheduled ? `<button class="wizard-pill" style="padding: 6px 12px; font-size: 13px; background: #3B82F6; color: white;" onclick="triggerFutureReminder('${log.id}')">⏰ 알림추가</button>` : reminderStatusText}
-                    ${isTimePassed ? `<button class="wizard-pill" style="padding: 6px 12px; font-size: 13px; background: #22C55E; color: white;" onclick="finalizeFutureDone('${log.id}')">Done</button>` : `<span style="font-size: 12px; color: #FACC15; font-weight: 700;">(시간 대기중)</span>`}
-                </div>
-            `;
-        }
-
-        let intervalHTML = '';
-        if (!log.isFuturePending && (log.sameMedIntervalStr || log.crossMedIntervalStr)) {
-            intervalHTML = `
-                <div class="interval-badge-group">
-                    ${log.sameMedIntervalStr ? `<span class="interval-badge same-med">${log.sameMedIntervalStr}</span>` : ''}
-                    ${log.crossMedIntervalStr ? `<span class="interval-badge cross-med">${log.crossMedIntervalStr}</span>` : ''}
-                </div>
-            `;
         }
 
         item.innerHTML = `
@@ -1042,13 +999,10 @@ function renderAllLogsUI() {
                 <span class="person-badge ${personClass}">${personIcon} ${log.person}</span>
             </div>
             <div class="log-item-center">
-                <div>${bodyText} ${log.isFuturePending ? '<span style="color: #F87171; font-size: 13px; font-weight: 800;">[미래예약]</span>' : ''}</div>
-                ${actionButtonsHTML}
-                ${intervalHTML}
+                <div>${bodyText}</div>
             </div>
             <button class="log-item-delete" onclick="deleteLogItem('${log.id}')">×</button>
         `;
-
         logListArea.appendChild(item);
     });
 }
@@ -1060,12 +1014,7 @@ window.deleteLogItem = function(id) {
 };
 
 function sendNtfyLog(text) {
-    fetch(`https://ntfy.sh/${NTFY_CHANNEL}`, {
-        method: 'POST',
-        body: text
-    }).catch(err => {
-        console.log("Ntfy log push failed:", err);
-    });
+    fetch(`https://ntfy.sh/${NTFY_CHANNEL}`, { method: 'POST', body: text }).catch(err => { console.log(err); });
 }
 
 function appendLogDataDirect(dateObj, text, className, sourceLabel) {
@@ -1092,6 +1041,201 @@ function appendLogDataDirect(dateObj, text, className, sourceLabel) {
 }
 
 
+// --- 📊 로그 저장 및 불러오기 ---
+window.saveCurrentLogsToStorage = function() {
+    if (globalLogsData.length === 0) { alert("저장할 로그가 없습니다."); return; }
+    let sorted = [...globalLogsData].sort((a, b) => a.timestamp - b.timestamp);
+    let sMonth = sorted[0].timestamp.getMonth() + 1;
+    let sDay = sorted[0].timestamp.getDate();
+    let eMonth = sorted[sorted.length - 1].timestamp.getMonth() + 1;
+    let eDay = sorted[sorted.length - 1].timestamp.getDate();
+
+    let titleStr = `${sMonth}월 ${sDay}일 ~ ${eMonth}월 ${eDay}일, ${globalLogsData.length}건`;
+    let savedList = JSON.parse(localStorage.getItem('familyHealthSavedLogs') || '[]');
+    savedList.push({ id: 'save_' + Date.now(), title: titleStr, createdAt: new Date().toLocaleString(), logs: globalLogsData });
+
+    localStorage.setItem('familyHealthSavedLogs', JSON.stringify(savedList));
+    alert(`[로그 저장 완료]\n"${titleStr}" 제목으로 저장되었습니다.`);
+    updateSavedLogsDropdown();
+};
+
+function updateSavedLogsDropdown() {
+    const selectEl = document.getElementById('savedLogsSelect');
+    if (!selectEl) return;
+    selectEl.innerHTML = '';
+    let savedList = JSON.parse(localStorage.getItem('familyHealthSavedLogs') || '[]');
+    if (savedList.length === 0) {
+        selectEl.innerHTML = `<option value="">-- 저장된 기록이 없습니다 --</option>`;
+        return;
+    }
+    savedList.forEach(item => {
+        let opt = document.createElement('option');
+        opt.value = item.id;
+        opt.innerText = `${item.title} (저장시각: ${item.createdAt})`;
+        selectEl.appendChild(opt);
+    });
+}
+
+window.loadSelectedSavedLogs = function() {
+    const selectEl = document.getElementById('savedLogsSelect');
+    if (!selectEl || !selectEl.value) { alert("불러올 저장 기록을 선택해 주세요."); return; }
+    let savedList = JSON.parse(localStorage.getItem('familyHealthSavedLogs') || '[]');
+    let found = savedList.find(i => i.id === selectEl.value);
+    if (found) {
+        globalLogsData = found.logs.map(l => ({ ...l, timestamp: new Date(l.timestamp) }));
+        renderAllLogsUI(); updateMiniBadgeBar(); buildTimelineReport();
+        if (isChartViewActive) renderChartForPerson(currentChartPerson);
+        alert(`"${found.title}" 기록을 불러왔습니다!`);
+    }
+};
+
+window.deleteSelectedSavedLog = function() {
+    const selectEl = document.getElementById('savedLogsSelect');
+    if (!selectEl || !selectEl.value) { alert("삭제할 저장 기록을 선택해 주세요."); return; }
+    if (confirm("정말 이 저장 기록을 삭제하시겠습니까?")) {
+        let savedList = JSON.parse(localStorage.getItem('familyHealthSavedLogs') || '[]');
+        savedList = savedList.filter(i => i.id !== selectEl.value);
+        localStorage.setItem('familyHealthSavedLogs', JSON.stringify(savedList));
+        updateSavedLogsDropdown();
+        alert("삭제되었습니다.");
+    }
+};
+
+
+// --- 📈 차트 및 리포트 전환 기능 (투약 기록 X축 맞춤 플러그인 적용) ---
+let isChartViewActive = false;
+let currentChartPerson = '윤우';
+let healthChartInstance = null;
+
+window.toggleReportView = function() {
+    isChartViewActive = !isChartViewActive;
+    const reportBody = document.getElementById('reportContainer');
+    const reportChart = document.getElementById('reportChartContainer');
+    const toggleBtn = document.getElementById('toggleReportChartBtn');
+
+    if (isChartViewActive) {
+        reportBody.style.display = 'none';
+        reportChart.style.display = 'flex';
+        toggleBtn.innerText = '📋 타임라인보기';
+        renderChartForPerson(currentChartPerson);
+    } else {
+        reportBody.style.display = 'flex';
+        reportChart.style.display = 'none';
+        toggleBtn.innerText = '📈 차트보기';
+        buildTimelineReport();
+    }
+};
+
+window.renderChartForPerson = function(personName) {
+    currentChartPerson = personName;
+    document.getElementById('chartTargetName').innerText = `(현재: ${personName})`;
+
+    let pLogs = globalLogsData.filter(l => l.person === personName && !l.isFuturePending);
+    pLogs.sort((a, b) => a.timestamp - b.timestamp);
+
+    let labels = [];
+    let tempValues = [];
+    let medicationAnnotations = []; // X축 시간에 맞춘 투약 기록 저장
+
+    pLogs.forEach(log => {
+        let timeLabel = `${log.timestamp.getMonth() + 1}/${log.timestamp.getDate()} ${String(log.timestamp.getHours()).padStart(2, '0')}:${String(log.timestamp.getMinutes()).padStart(2, '0')}`;
+        labels.push(timeLabel);
+
+        if (log.type === 'temp') {
+            if (log.subDetail === '정상') tempValues.push(36.5);
+            else tempValues.push(parseFloat(`${log.subDetail}.${log.decimal}`));
+        } else {
+            tempValues.push(null);
+        }
+
+        // 투약 및 약 복용 기록 수집
+        if (log.type === 'fever' || log.type === 'general-med') {
+            medicationAnnotations.push(log.subDetail);
+        } else {
+            medicationAnnotations.push('');
+        }
+    });
+
+    const canvasCtx = document.getElementById('healthChartCanvas').getContext('2d');
+    if (healthChartInstance) healthChartInstance.destroy();
+
+    // Chart.js 커스텀 플러그인 (X축 시간에 맞추어 차트 상단/하단에 투약명을 한글로 직접 기입)
+    const medicationPlugin = {
+        id: 'medicationPlugin',
+        afterDatasetsDraw(chart) {
+            const { ctx, scales: { x, y } } = chart;
+            ctx.save();
+            ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = 'center';
+
+            chart.data.datasets[0].data.forEach((val, index) => {
+                let medName = medicationAnnotations[index];
+                if (medName) {
+                    let xCoor = x.getPixelForValue(index);
+                    // 차트 상단 영역에 투약명 말풍선 스타일로 표시
+                    let yCoor = y.getPixelForValue(40.2); 
+
+                    ctx.fillStyle = medName === '부르펜' ? '#EF4444' : (medName === '아세트' ? '#3B82F6' : '#22C55E');
+                    ctx.fillRect(xCoor - 28, yCoor - 18, 56, 22);
+
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillText(medName, xCoor, yCoor - 3);
+                }
+            });
+            ctx.restore();
+        }
+    };
+
+    healthChartInstance = new Chart(canvasCtx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: `${personName} 체온 (°C) 및 투약 기록`,
+                data: tempValues,
+                borderColor: '#38BDF8',
+                backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                borderWidth: 3,
+                pointRadius: 6,
+                pointBackgroundColor: '#FACC15',
+                tension: 0.2,
+                spanGaps: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    min: 35.5,
+                    max: 40.5,
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    ticks: { color: '#94A3B8', font: { size: 14, weight: 'bold' } }
+                },
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#94A3B8', font: { size: 12 } }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: 'white', font: { size: 16, weight: 'bold' } } },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let idx = context.dataIndex;
+                            let med = medicationAnnotations[idx];
+                            let temp = context.parsed.y;
+                            return `체온: ${temp}°C ${med ? '| 투약: ' + med : ''}`;
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [medicationPlugin]
+    });
+};
+
+
 // --- 📊 로그전체리포트 생성 로직 ---
 function buildTimelineReport() {
     if (!reportContainer) return;
@@ -1107,9 +1251,7 @@ function buildTimelineReport() {
 
     chronologicalLogs.forEach(log => {
         let pName = log.person || '기타';
-        if (!personsMap[pName]) {
-            personsMap[pName] = [];
-        }
+        if (!personsMap[pName]) personsMap[pName] = [];
         personsMap[pName].push(log);
     });
 
@@ -1121,38 +1263,21 @@ function buildTimelineReport() {
             let m = String(log.timestamp.getMonth() + 1).padStart(2, '0');
             let d = String(log.timestamp.getDate()).padStart(2, '0');
             let dayStr = `${m}/${d}(${daysOfWeek[log.timestamp.getDay()]})`;
-
-            if (!dateMap[dayStr]) {
-                dateMap[dayStr] = [];
-            }
+            if (!dateMap[dayStr]) dateMap[dayStr] = [];
             dateMap[dayStr].push(log);
         });
 
         let columnsHTML = '';
-
-        let sortedDateKeys = Object.keys(dateMap).sort((a, b) => {
-            return new Date(b.substring(0, 5)) - new Date(a.substring(0, 5));
-        });
+        let sortedDateKeys = Object.keys(dateMap).sort((a, b) => new Date(b.substring(0, 5)) - new Date(a.substring(0, 5)));
 
         sortedDateKeys.forEach(dateKey => {
             let dayLogs = dateMap[dateKey];
             dayLogs.sort((a, b) => b.timestamp - a.timestamp);
-
             let rowsHTML = '';
 
             dayLogs.forEach(log => {
                 let timeStr = `${String(log.timestamp.getHours()).padStart(2, '0')}:${String(log.timestamp.getMinutes()).padStart(2, '0')}`;
-                
-                let reportIntervalText = '';
-                if (log.isFuturePending) {
-                    reportIntervalText = '⏰ 예약 대기중';
-                } else if (log.sameMedIntervalStr) {
-                    reportIntervalText = log.sameMedIntervalStr;
-                } else if (log.crossMedIntervalStr) {
-                    reportIntervalText = log.crossMedIntervalStr;
-                } else {
-                    reportIntervalText = '✨ 첫 기록';
-                }
+                let reportIntervalText = log.isFuturePending ? '⏰ 예약 대기중' : (log.sameMedIntervalStr || log.crossMedIntervalStr || '✨ 첫 기록');
 
                 let contentDesc = '';
                 if (log.type === 'fever') {
@@ -1164,9 +1289,7 @@ function buildTimelineReport() {
                 } else if (log.type === 'general-med') {
                     contentDesc = `<span style="background:#334155; color:#F1F5F9; padding:3px 8px; border-radius:6px; font-weight:800; border:1px solid #64748B;">약 복용</span> (${log.subDetail})`;
                 } else {
-                    contentDesc = log.text
-                        .replace('아세트', '<span class="med-acet">아세트</span>')
-                        .replace('부르펜', '<span class="med-ibu">부르펜</span>');
+                    contentDesc = log.text.replace('아세트', '<span class="med-acet">아세트</span>').replace('부르펜', '<span class="med-ibu">부르펜</span>');
                 }
 
                 rowsHTML += `
@@ -1181,9 +1304,7 @@ function buildTimelineReport() {
             columnsHTML += `
                 <div class="report-date-column">
                     <div class="report-date-header">📅 ${dateKey}</div>
-                    <div class="timeline-events-list">
-                        ${rowsHTML}
-                    </div>
+                    <div class="timeline-events-list">${rowsHTML}</div>
                 </div>
             `;
         });
@@ -1192,9 +1313,7 @@ function buildTimelineReport() {
         card.className = 'report-timeline-card';
         card.innerHTML = `
             <div class="report-person-title">👤 ${person} 상세 타임라인 리포트</div>
-            <div class="report-columns-grid">
-                ${columnsHTML}
-            </div>
+            <div class="report-columns-grid">${columnsHTML}</div>
         `;
         reportContainer.appendChild(card);
     }
