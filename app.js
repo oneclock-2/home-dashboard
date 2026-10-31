@@ -1,14 +1,6 @@
 const NTFY_CHANNEL = "phyjs1073080634"; 
 
-// 시계 작동
-function updateClock() {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    document.getElementById('clock').innerText = `${hours}:${minutes}`;
-}
-setInterval(updateClock, 1000);
-updateClock();
+
 
 // 배경 사진 슬라이드 (10분 주기)
 let currentSlide = 0;
@@ -18,6 +10,7 @@ setInterval(() => {
     currentSlide = (currentSlide + 1) % slides.length;
     slides[currentSlide].classList.add('active');
 }, 10 * 60 * 1000);
+
 
 // --- 화면 밝기 및 켜짐 유지 (Wake Lock API) ---
 let wakeLock = null;
@@ -326,13 +319,17 @@ function playAlertSound() {
 
 // --- 📝 건강·소통 로그 시스템 ---
 const logTriggerBtn = document.getElementById('logTriggerBtn');
-const logPanel = document.getElementById('logPanel');
-const logCloseBtn = document.getElementById('logCloseBtn');
+const logPanelBackdrop = document.getElementById('logPanelBackdrop');
 const logHideBtn = document.getElementById('logHideBtn');
+const logTotalDeleteBtn = document.getElementById('logTotalDeleteBtn');
 const logReportBtn = document.getElementById('logReportBtn');
 const logFilterBtn = document.getElementById('logFilterBtn');
 const logWizardArea = document.getElementById('logWizardArea');
 const logListArea = document.getElementById('logListArea');
+
+const logMiniBadgeBar = document.getElementById('logMiniBadgeBar');
+const miniBadgeCount = document.getElementById('miniBadgeCount');
+const miniSummaryTexts = document.getElementById('miniSummaryTexts');
 
 const reportModal = document.getElementById('reportModal');
 const reportCloseBtn = document.getElementById('reportCloseBtn');
@@ -350,30 +347,49 @@ let logState = {
     timeOffset: 0   
 };
 
-// 버튼 이벤트 리스너 안전하게 바인딩
 if (logTriggerBtn) {
     logTriggerBtn.onclick = () => {
-        if (logPanel) {
-            logPanel.style.display = 'flex';
+        if (logPanelBackdrop) {
+            logPanelBackdrop.classList.add('active');
             resetWizard();
         }
     };
 }
 
-if (logHideBtn) {
-    logHideBtn.onclick = () => {
-        if (logPanel) logPanel.style.display = 'none';
+if (logPanelBackdrop) {
+    logPanelBackdrop.onclick = () => {
+        logPanelBackdrop.classList.remove('active');
+        updateMiniBadgeBar();
     };
 }
 
-if (logCloseBtn) {
-    logCloseBtn.onclick = () => {
-        globalLogsData = []; 
-        currentFilter = { person: '전체', category: '전체' };
-        renderAllLogsUI();
-        if (logPanel) logPanel.style.display = 'none';
+if (logHideBtn) {
+    logHideBtn.onclick = () => {
+        if (logPanelBackdrop) {
+            logPanelBackdrop.classList.remove('active');
+            updateMiniBadgeBar();
+        }
     };
 }
+
+if (logTotalDeleteBtn) {
+    logTotalDeleteBtn.onclick = () => {
+        if (confirm("정말 모든 로그 기록을 삭제하시겠습니까?")) {
+            globalLogsData = []; 
+            currentFilter = { person: '전체', category: '전체' };
+            renderAllLogsUI();
+            if (logPanelBackdrop) logPanelBackdrop.classList.remove('active');
+            updateMiniBadgeBar();
+        }
+    };
+}
+
+window.openLogPanelFromMini = function() {
+    if (logPanelBackdrop) {
+        logPanelBackdrop.classList.add('active');
+        resetWizard();
+    }
+};
 
 if (logReportBtn) {
     logReportBtn.onclick = () => {
@@ -394,9 +410,28 @@ if (reportCloseBtn) {
     };
 }
 
+function updateMiniBadgeBar() {
+    if (!logMiniBadgeBar) return;
+    if (globalLogsData.length > 0) {
+        logTriggerBtn.style.display = 'none';
+        logMiniBadgeBar.style.display = 'flex';
+        miniBadgeCount.innerText = globalLogsData.length;
+
+        let sortedDesc = [...globalLogsData].sort((a, b) => b.timestamp - a.timestamp);
+        let top4Texts = sortedDesc.slice(0, 4).map(l => {
+            let desc = l.type === 'fever' ? `[${l.person}] ${l.subDetail}` : (l.type === 'temp' ? `[${l.person}] 체온` : l.text);
+            return `${l.dateFormattedStr.slice(6)} ${desc}`;
+        });
+        miniSummaryTexts.innerText = top4Texts.join(' | ');
+    } else {
+        logTriggerBtn.style.display = 'block';
+        logMiniBadgeBar.style.display = 'none';
+    }
+}
+
 function resetWizard() {
-    currentFilter = { person: '전체', category: '전체' }; // '입력으로 돌아갈 때' 필터 자동 해제(초기화)
-    renderAllLogsUI(); // 전체 로그 목록 다시 반영
+    currentFilter = { person: '전체', category: '전체' };
+    renderAllLogsUI();
     logState = { category: null, person: null, subCategory: null, decimal: null, timeOffset: 0 };
     renderWizardStep1();
 }
@@ -718,6 +753,7 @@ function processAndSaveLog(type, targetDate) {
 
     globalLogsData.push(newLogItem);
     renderAllLogsUI();
+    updateMiniBadgeBar();
     resetWizard();
 }
 
@@ -831,6 +867,7 @@ function renderAllLogsUI() {
 window.deleteLogItem = function(id) {
     globalLogsData = globalLogsData.filter(l => l.id != id);
     renderAllLogsUI();
+    updateMiniBadgeBar();
 };
 
 function sendNtfyLog(text) {
@@ -861,6 +898,7 @@ function appendLogDataDirect(dateObj, text, className, sourceLabel) {
         className: className
     });
     renderAllLogsUI();
+    updateMiniBadgeBar();
 }
 
 

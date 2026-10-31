@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>윤우윤서네 대시보드</title>
+    <title>우리집 스마트 알림판</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -20,20 +20,37 @@
     <div class="sticky-notes-container" id="stickyNotesContainer"></div>
 
     <button class="settings-gear-btn" id="settingsGearBtn" title="환경설정">⚙️</button>
-    <button class="log-trigger-btn" id="logTriggerBtn">📝 로그입력</button>
-
-    <div class="log-panel" id="logPanel">
-        <div class="log-panel-header">
-            <span>📋해열제/체온 로그</span>
-            <div class="log-header-btns">
-                <button class="log-filter-btn" id="logFilterBtn">🔍 사람별 보기</button>
-                <button class="log-report-btn" id="logReportBtn">📊 로그전체리포트</button>
-                <button class="log-hide-btn" id="logHideBtn">로그 숨기기</button>
-                <button class="log-close-btn" id="logCloseBtn">전체삭제 및 닫기</button>
-            </div>
+    
+    <!-- 해열제/체온 로그 버튼 및 우측 하단 미니 요약 바 -->
+    <div class="log-trigger-wrapper" id="logTriggerWrapper">
+        <button class="log-trigger-btn" id="logTriggerBtn">💊 해열제/체온 로그</button>
+        <div class="log-mini-badge-bar" id="logMiniBadgeBar" style="display: none;" onclick="openLogPanelFromMini()">
+            <div class="mini-badge-circle" id="miniBadgeCount">0</div>
+            <div class="mini-summary-texts" id="miniSummaryTexts">최근 로그 요약...</div>
+            <button class="mini-detail-btn">로그 상세보기</button>
         </div>
-        <div class="log-wizard-area" id="logWizardArea"></div>
-        <div class="log-list-area" id="logListArea"></div>
+    </div>
+
+    <!-- 로그 패널 (바깥 영역 클릭 시 닫힘 기능 포함) -->
+    <div class="log-panel-backdrop" id="logPanelBackdrop">
+        <div class="log-panel" id="logPanel" onclick="event.stopPropagation()">
+            <div class="log-panel-header">
+                <span>📋 우리집 건강·소통 로그</span>
+                <div class="log-header-btns">
+                    <button class="log-filter-btn" id="logFilterBtn">🔍 사람별 보기</button>
+                    <button class="log-report-btn" id="logReportBtn">📊 로그전체리포트</button>
+                    <button class="log-hide-btn" id="logHideBtn">로그 숨기기</button>
+                </div>
+            </div>
+            <div class="log-wizard-area" id="logWizardArea"></div>
+            
+            <!-- 실수 방지를 위해 하단으로 이동 및 확인창이 추가된 전체 삭제 버튼 -->
+            <div class="log-panel-footer-actions">
+                <button class="log-total-delete-btn" id="logTotalDeleteBtn">🗑️ 전체 삭제 및 닫기</button>
+            </div>
+
+            <div class="log-list-area" id="logListArea"></div>
+        </div>
     </div>
 
     <!-- 환경설정 모달 -->
@@ -98,13 +115,13 @@
         <div class="checklist-items" id="checklistItems"></div>
     </div>
 
-    <div class="main-idle-content">
-        <div class="clock" id="clock">00:00</div>
-        <div class="status-badge-wrapper">
-            <div class="status-badge">🟢 알림 수신 대기 중...</div>
-            <div class="dad-credit-large">Designed & Developed by Dad❤️ &lt;PARK&gt;</div>
-        </div>
+    <!-- 번인 분산을 위해 위치가 유동적으로 변하는 시계 영역 -->
+<div class="main-idle-content" style="position: absolute; bottom: 40px; left: 40px; z-index: 5; color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.4);">
+    <div class="status-badge-wrapper">
+        <div class="status-badge">🟢 알림 수신 대기 중...</div>
+        <div class="dad-credit-large">Designed & Developed by Dad❤️ &lt;PARK&gt;</div>
     </div>
+</div>
 
     <div class="modal-backdrop" id="messageModal">
         <div class="modal-content">
