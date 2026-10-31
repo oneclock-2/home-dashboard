@@ -30,46 +30,25 @@ function loadFromLocalStorage() {
             if (Array.isArray(parsed) && parsed.length > 0) {
                 globalLogsData = parsed.map(item => ({
                     ...item,
-                    timestamp: new Date(item.timestamp) // 문자열로 변환된 날짜 객체 복원
+                    timestamp: new Date(item.timestamp)
                 }));
-                return true; // 기존에 저장된 유저 데이터가 있음
+                return true; 
             }
         }
     } catch (e) {
         console.error("로컬 데이터 로드 실패:", e);
     }
-    return false; // 저장된 데이터가 없음
+    return false; 
 }
 
 // --- 🌟 목업 테스트 데이터 (최초 1회만 생성) ---
 function loadMockTestData() {
-    // 💡 기존 로컬 저장소 데이터가 이미 있다면 목업 데이터를 불러오지 않음!
     if (loadFromLocalStorage()) {
         return;
     }
 
     const baseTime = new Date();
     const mockItems = [
-        { daysAgo: 5, hour: 9, person: '윤우', type: 'temp', subDetail: '39', decimal: '2' },
-        { daysAgo: 5, hour: 9, person: '윤우', type: 'fever', subDetail: '부르펜' },
-        { daysAgo: 5, hour: 13, person: '윤우', type: 'temp', subDetail: '38', decimal: '5' },
-        { daysAgo: 5, hour: 17, person: '윤우', type: 'general-med', subDetail: '항생제' },
-        { daysAgo: 5, hour: 21, person: '윤우', type: 'fever', subDetail: '아세트' },
-
-        { daysAgo: 4, hour: 8, person: '윤우', type: 'temp', subDetail: '37', decimal: '5' },
-        { daysAgo: 4, hour: 10, person: '윤서', type: 'temp', subDetail: '39', decimal: '0' },
-        { daysAgo: 4, hour: 10, person: '윤서', type: 'fever', subDetail: '부르펜' },
-        { daysAgo: 4, hour: 15, person: '윤서', type: 'temp', subDetail: '38', decimal: '2' },
-        { daysAgo: 4, hour: 20, person: '윤서', type: 'general-med', subDetail: '유산균/비타민' },
-
-        { daysAgo: 3, hour: 9, person: '윤우', type: 'temp', subDetail: '정상', decimal: '0' },
-        { daysAgo: 3, hour: 9, person: '윤서', type: 'temp', subDetail: '38', decimal: '1' },
-        { daysAgo: 3, hour: 14, person: '윤서', type: 'fever', subDetail: '아세트' },
-        { daysAgo: 3, hour: 19, person: '윤서', type: 'temp', subDetail: '37', decimal: '4' },
-
-        { daysAgo: 2, hour: 10, person: '윤서', type: 'temp', subDetail: '정상', decimal: '0' },
-        { daysAgo: 2, hour: 14, person: '윤우', type: 'general-med', subDetail: '처방약' },
-
         { daysAgo: 0, hour: 8, person: '윤우', type: 'temp', subDetail: '정상', decimal: '0' },
         { daysAgo: 0, hour: 8, person: '윤서', type: 'temp', subDetail: '정상', decimal: '0' }
     ];
@@ -99,16 +78,13 @@ function loadMockTestData() {
         });
     });
     
-    saveToLocalStorage(); // 목업 데이터 로드 후 최초 저장
+    saveToLocalStorage();
 }
 loadMockTestData();
 
-// --- ⏰ 시계 및 예약 체크 ---
 // --- ⏰ 시계 및 날짜, 예약 체크 ---
 function updateClock() {
     const now = new Date();
-    
-    // 🌟 월, 일, 요일 계산
     const month = now.getMonth() + 1;
     const date = now.getDate();
     const dayName = daysOfWeek[now.getDay()];
@@ -117,7 +93,6 @@ function updateClock() {
     const dateEl = document.getElementById('centerDate');
     if (dateEl) dateEl.innerText = dateStr;
 
-    // 기존 시간 갱신
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const clockEl = document.getElementById('centerClock');
@@ -309,7 +284,7 @@ function playAlertSound() {
     }
 }
 
-// --- 🚨 실시간 푸시 알림 (ntfy 연동) ---
+// --- 🚨 [핵심 개선] 실시간 푸시 알림 (SSE + 주기적 폴링 이중 안전장치) ---
 let unconfirmedList = []; 
 let reminderTimeout = null;
 let reminderStep = 0;
@@ -321,28 +296,90 @@ const checklistBar = document.getElementById('checklistBar');
 const checklistItems = document.getElementById('checklistItems');
 const stickyNotesContainer = document.getElementById('stickyNotesContainer');
 const myClientToken = 'tablet-' + Math.random().toString(36).substring(2, 9);
-const eventSource = new EventSource(`https://ntfy.sh/${NTFY_CHANNEL}/sse`);
 
-eventSource.onmessage = function(event) {
+let eventSource = null;
+let processedMessageIds = new Set(); // 중복 수신 방지 세트
+
+function handleIncomingMessage(msgData) {
     try {
-        const data = JSON.parse(event.data);
-        if (data.event === 'message' && data.message) {
-            if (data.message.startsWith('[확인완료]')) return; 
-            if (data.message.includes(`[token:${myClientToken}]`)) return;
+        if (!msgData || !msgData.message) return;
+        const msgText = msgData.message;
+        const msgId = msgData.id || (msgText + (msgData.time || ''));
 
-            if (data.message.startsWith('로그') || data.message.includes('로그')) {
-                const cleanMsg = data.message.replace(/\[token:[^\]]+\]/, '').replace(/^로그\s*/, '').trim();
-                const now = new Date();
-                let formattedMsg = cleanMsg.replace('아세트', '<span class="med-acet">아세트</span>').replace('부르펜', '<span class="med-ibu">부르펜</span>');
-                let detectedType = cleanMsg.includes('해열제') ? 'fever-reducer' : (cleanMsg.includes('체온') ? 'temperature' : 'general-med');
-                appendLogDataDirect(now, formattedMsg, detectedType, '외부폰');
-                return;
-            }
-            if (data.message.includes('경적')) playAlertSound();
-            triggerEmergencyAlert(data.message);
+        // 중복 수신된 메시지면 무시
+        if (processedMessageIds.has(msgId)) return;
+        processedMessageIds.add(msgId);
+        if (processedMessageIds.size > 200) {
+            const firstKey = processedMessageIds.values().next().value;
+            processedMessageIds.delete(firstKey);
         }
-    } catch (e) { console.error(e); }
-};
+
+        if (msgText.startsWith('[확인완료]')) return; 
+        if (msgText.includes(`[token:${myClientToken}]`)) return;
+
+        if (msgText.startsWith('로그') || msgText.includes('로그')) {
+            const cleanMsg = msgText.replace(/\[token:[^\]]+\]/, '').replace(/^로그\s*/, '').trim();
+            const now = new Date();
+            let formattedMsg = cleanMsg.replace('아세트', '<span class="med-acet">아세트</span>').replace('부르펜', '<span class="med-ibu">부르펜</span>');
+            let detectedType = cleanMsg.includes('해열제') ? 'fever-reducer' : (cleanMsg.includes('체온') ? 'temperature' : 'general-med');
+            appendLogDataDirect(now, formattedMsg, detectedType, '외부폰');
+            return;
+        }
+
+        if (msgText.includes('경적')) playAlertSound();
+        triggerEmergencyAlert(msgText);
+    } catch (e) {
+        console.error("메시지 처리 오류:", e);
+    }
+}
+
+// 1. SSE 실시간 스트림 연결
+function initNtfyEventListener() {
+    if (eventSource) {
+        try { eventSource.close(); } catch(e) {}
+    }
+
+    eventSource = new EventSource(`https://ntfy.sh/${NTFY_CHANNEL}/sse`);
+
+    eventSource.onmessage = function(event) {
+        try {
+            if (!event || !event.data) return;
+            const data = JSON.parse(event.data);
+            if (data.event === 'message' && data.message) {
+                handleIncomingMessage(data);
+            }
+        } catch (e) {}
+    };
+
+    eventSource.onerror = function() {
+        try { eventSource.close(); } catch(e) {}
+        setTimeout(initNtfyEventListener, 5000);
+    };
+}
+
+// 2. [이중 안전장치] 15초마다 ntfy JSON API를 직접 조회하는 폴링 (SSE가 죽어도 알림 보장)
+async function pollNtfyMessages() {
+    try {
+        const res = await fetch(`https://ntfy.sh/${NTFY_CHANNEL}/json?limit=5`);
+        if (res.ok) {
+            const text = await res.text();
+            const lines = text.trim().split('\n');
+            lines.forEach(line => {
+                if (!line) return;
+                try {
+                    const data = JSON.parse(line);
+                    if (data.event === 'message' && data.message) {
+                        handleIncomingMessage(data);
+                    }
+                } catch (err) {}
+            });
+        }
+    } catch (e) {}
+}
+
+// 초기 실행 및 폴링 루프 시작 (15초 간격)
+initNtfyEventListener();
+setInterval(pollNtfyMessages, 15000);
 
 function triggerEmergencyAlert(messageText) {
     const now = new Date();
@@ -437,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 viewingLogsData = null;
                 logPanelBackdrop.classList.add('active');
                 resetWizard();
-                updateMiniBadgeBar(); // 🌟 패널 열릴 때 미니바 숨김 즉시 반영
+                updateMiniBadgeBar();
             }
         };
     }
@@ -467,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 globalLogsData = []; 
                 viewingLogsData = null; 
                 currentFilter = { person: '전체', category: '전체' };
-                saveToLocalStorage(); // 삭제 상태 저장
+                saveToLocalStorage(); 
                 renderAllLogsUI();
                 if (logPanelBackdrop) logPanelBackdrop.classList.remove('active');
                 updateMiniBadgeBar();
@@ -480,7 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
             viewingLogsData = null;
             logPanelBackdrop.classList.add('active');
             resetWizard();
-            updateMiniBadgeBar(); // 🌟 미니바 열릴 때 숨김 즉시 반영
+            updateMiniBadgeBar();
         }
     };
 
@@ -507,6 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (reportCloseBtn) {
         reportCloseBtn.onclick = () => {
             if (reportModal) reportModal.classList.remove('active');
+            updateMiniBadgeBar();
         };
     }
 });
@@ -520,10 +558,8 @@ const logListArea = document.getElementById('logListArea');
 function updateMiniBadgeBar() {
     if (!logMiniBadgeBar) return;
     
-    // 🌟 리포트 모달이나 로그 패널이 하나라도 열려있으면 무조건 미니바 숨김
     const reportModal = document.getElementById('reportModal');
     const logPanelBackdrop = document.getElementById('logPanelBackdrop');
-    
     const isReportOpen = reportModal && reportModal.classList.contains('active');
     const isLogPanelOpen = logPanelBackdrop && logPanelBackdrop.classList.contains('active');
 
@@ -848,7 +884,7 @@ function processAndSaveLog(type, targetDate) {
         rawPushText: rawPushText
     });
 
-    saveToLocalStorage(); // 🌟 새로운 로그가 추가되면 로컬에 자동 영구 저장!
+    saveToLocalStorage();
     renderAllLogsUI();
     updateMiniBadgeBar();
     resetWizard();
@@ -981,7 +1017,7 @@ window.deleteLogItem = function(id) {
         viewingLogsData = viewingLogsData.filter(l => l.id != id);
     } else {
         globalLogsData = globalLogsData.filter(l => l.id != id);
-        saveToLocalStorage(); // 🌟 삭제된 상태도 로컬에 즉시 반영
+        saveToLocalStorage(); 
     }
     renderAllLogsUI();
     updateMiniBadgeBar();
@@ -1010,7 +1046,7 @@ function appendLogDataDirect(dateObj, text, className, sourceLabel) {
         className: className,
         isFuturePending: false
     });
-    saveToLocalStorage(); // 🌟 외부 동기화 로그도 영구 저장
+    saveToLocalStorage(); 
     renderAllLogsUI();
     updateMiniBadgeBar();
 }
@@ -1100,7 +1136,7 @@ window.deleteSelectedSavedLog = function() {
     }
 };
 
-// --- 📊 리포트 및 꺾은선 차트 ---
+// --- 📊 리포트 및 꺾은선 차트 (38도 선 및 붉은 배경 포함) ---
 let isChartViewActive = true; 
 let currentChartPerson = '윤우';
 let healthChartInstance = null;
@@ -1156,7 +1192,6 @@ window.renderChartForPerson = function(personName) {
     const canvasCtx = canvasElem.getContext('2d');
     if (healthChartInstance) healthChartInstance.destroy();
 
-    // 🌟 1. 낮/밤 배경 + 38도 초과 위험 구간(y > 38.0) 붉은색 배경 통합 플러그인
     const dayNightBackgroundPlugin = {
         id: 'dayNightBackgroundPlugin',
         beforeDraw(chart) {
@@ -1167,7 +1202,6 @@ window.renderChartForPerson = function(personName) {
             let minX = x.min;
             let maxX = x.max;
 
-            // (1) 기존 낮/밤 배경 그리기
             let curTime = new Date(minX).setHours(0,0,0,0);
             while (curTime <= maxX) {
                 let dayStart = new Date(curTime).setHours(6,0,0,0);
@@ -1204,11 +1238,10 @@ window.renderChartForPerson = function(personName) {
                 curTime = nextDay;
             }
 
-            // (2) 🌟 y > 38.0 초과 위험 구간 붉은색 영역 칠하기
+            // 38도 초과 영역 붉은색 경고 배경
             let y38Coord = y.getPixelForValue(38.0);
             if (y38Coord < bottom && y38Coord > top) {
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.18)'; // 👈 세미콜론(;) 오타 제거 및 농도 살짝 보강
-                // 38선(y38Coord)부터 차트 최상단(top)까지 영역 채우기
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.18)';
                 ctx.fillRect(left, top, right - left, Math.max(0, y38Coord - top));
             }
 
@@ -1216,7 +1249,6 @@ window.renderChartForPerson = function(personName) {
         }
     };
 
-    // 🌟 2. y = 38.0 기준 빨간 평행 실선 및 라벨 표시 플러그인
     const thresholdLinePlugin = {
         id: 'thresholdLinePlugin',
         afterDraw(chart) {
@@ -1228,13 +1260,12 @@ window.renderChartForPerson = function(personName) {
                 ctx.save();
                 ctx.beginPath();
                 ctx.lineWidth = 2.5;
-                ctx.strokeStyle = '#EF4444'; // 선명한 레드 컬러
-                ctx.setLineDash([6, 4]); // 점선 형태 또는 실선 (실선 원하시면 setLineDash 지우시면 됩니다)
+                ctx.strokeStyle = '#EF4444';
+                ctx.setLineDash([6, 4]);
                 ctx.moveTo(left, yCoord);
                 ctx.lineTo(right, yCoord);
                 ctx.stroke();
 
-                // 38도 경고 텍스트 라벨
                 ctx.fillStyle = '#EF4444';
                 ctx.font = 'bold 12px sans-serif';
                 ctx.textAlign = 'right';
