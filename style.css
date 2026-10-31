@@ -301,10 +301,10 @@ body {
     background: rgba(34, 197, 94, 0.25);
     border: 2px solid #22C55E;
     color: #86EFAC;
-    padding: 14px 28px;
+    padding: 10px 20px;
     border-radius: 30px;
-    font-size: 42px; /* 3배 확대 */
-    font-weight: 900;
+    font-size: 18px; /* 3배 확대 */
+    font-weight: bold;
     width: fit-content;
     box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
     backdrop-filter: blur(8px);
