@@ -83,7 +83,7 @@ body {
     transform: scale(1.1);
 }
 
-/* 🌤️ 우측 상단 날씨 위젯 (12개 아이콘: 오늘 3시간 간격 6개 + 내일부터 6일치 예보 6개) */
+/* 🌤️ 우측 상단 날씨 위젯 */
 .top-weather-widget {
     position: absolute;
     top: 24px;
@@ -313,7 +313,7 @@ body {
     font-weight: bold;
 }
 
-/* 💊 건강·소통 로그 트리거 및 미니바 */
+/* 💊 윤우윤서 체온로그 트리거 및 미니바 (우측 하단 고정) */
 .log-trigger-wrapper {
     position: absolute;
     bottom: 30px;
@@ -385,36 +385,25 @@ body {
     cursor: pointer;
 }
 
-/* 로그 패널 모달 */
-.log-panel-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(5px);
-    z-index: 100;
-    display: none;
-    justify-content: center;
-    align-items: center;
-}
-
-.log-panel-backdrop.active {
-    display: flex;
-}
-
+/* 📋 우측 하단 팝업형 로그 패널 (원래 의도하신 우측 하단 토글 구조) */
 .log-panel {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
     background: #1E293B;
-    width: 90%;
-    max-width: 750px;
-    height: 85vh;
+    width: 650px;
+    height: 75vh;
     border-radius: 24px;
-    display: flex;
+    display: none;
     flex-direction: column;
     padding: 24px;
     box-shadow: 0 25px 60px rgba(0,0,0,0.8);
     border: 1px solid rgba(255,255,255,0.15);
+    z-index: 100;
+}
+
+.log-panel.active {
+    display: flex;
 }
 
 .log-panel-header {

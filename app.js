@@ -1,6 +1,7 @@
 const NTFY_CHANNEL = "phyjs1073080634"; 
 
 let globalLogsData = [];
+let viewingLogsData = null; 
 let currentFilter = { person: '전체', category: '전체' };
 const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -97,22 +98,13 @@ document.addEventListener('visibilitychange', async () => {
 });
 requestScreenWakeLock();
 
-// --- 🌤️ 날씨 API 연동 (12개 아이콘: 오늘 3시간 간격 6개 + 내일부터 6일치 주간예보) ---
-
-// --- 🌤️ 날씨 API 연동 수정 (12개 아이콘: 오늘 3시간 간격 6개 + 내일부터 6일치 주간예보) ---
-// --- 🌤️ 날씨 API 연동 수정 (URL 파라미터 규격 수정: weathercode -> weather_code) ---
-// --- 🌤️ 날씨 API 연동 최종 수정 (400 에러 해결) ---
-// --- 🌤️ 날씨 API 연동 최종 안정화 버전 (400 에러 원인 차단) ---
-// --- 🌤️ 날씨 API 연동 (경기도 안양시 표기 및 주간예보 요일 추가) ---
+// --- 🌤️ 날씨 API 연동 ---
 async function fetchWeather() {
     try {
         const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=37.3943&longitude=126.9568&hourly=temperature_2m,weathercode&timezone=Asia/Seoul');
         const data = res.ok ? await res.json() : null;
         
-        if (!data || !data.hourly) {
-            console.error("날씨 데이터를 받아오지 못했습니다.");
-            return;
-        }
+        if (!data || !data.hourly) return;
 
         const times = data.hourly.time;
         const temps = data.hourly.temperature_2m;
@@ -124,12 +116,10 @@ async function fetchWeather() {
         const dayStr = String(now.getDate()).padStart(2, '0');
         const todayDateStr = `${year}-${monthStr}-${dayStr}`;
 
-        // 1) 첫째 줄: 오늘 3시간 간격 (9시, 12시, 15시, 18시, 21시, 0시) 총 6개
         const todayRow = document.getElementById('weatherTodayRow');
         if (todayRow) {
             const targetHours = [9, 12, 15, 18, 21, 0];
             let todayHtml = '';
-
             const tomorrow = new Date(now);
             tomorrow.setDate(tomorrow.getDate() + 1);
             const tYear = tomorrow.getFullYear();
@@ -153,38 +143,24 @@ async function fetchWeather() {
                 if (matchedIdx !== -1) {
                     let t = Math.round(temps[matchedIdx]);
                     let icon = getWeatherIcon(codes[matchedIdx]);
-                    todayHtml += `
-                        <div class="weather-cell">
-                            <span class="weather-cell-time">${timeLabel}</span>
-                            <span class="weather-cell-icon">${icon}</span>
-                            <span class="weather-cell-temp">${t}°</span>
-                        </div>
-                    `;
+                    todayHtml += `<div class="weather-cell"><span class="weather-cell-time">${timeLabel}</span><span class="weather-cell-icon">${icon}</span><span class="weather-cell-temp">${t}°</span></div>`;
                 } else {
-                    todayHtml += `
-                        <div class="weather-cell">
-                            <span class="weather-cell-time">${timeLabel}</span>
-                            <span class="weather-cell-icon">🌡️</span>
-                            <span class="weather-cell-temp">-</span>
-                        </div>
-                    `;
+                    todayHtml += `<div class="weather-cell"><span class="weather-cell-time">${timeLabel}</span><span class="weather-cell-icon">🌡️</span><span class="weather-cell-temp">-</span></div>`;
                 }
             });
             todayRow.innerHTML = todayHtml;
         }
 
-        // 2) 둘째 줄: 내일부터 총 6일치 주간 예보 (날짜 및 요일 표기 추가)
         const dailyRow = document.getElementById('weatherDailyRow');
         if (dailyRow) {
             let dailyHtml = '';
-            
             for (let dayOffset = 1; dayOffset <= 6; dayOffset++) {
                 let targetDay = new Date(now);
                 targetDay.setDate(targetDay.getDate() + dayOffset);
                 let dYear = targetDay.getFullYear();
                 let dMonth = targetDay.getMonth() + 1;
                 let dDay = targetDay.getDate();
-                let dayOfWeekName = daysOfWeek[targetDay.getDay()]; // 요일 계산
+                let dayOfWeekName = daysOfWeek[targetDay.getDay()];
                 let dDateStr = `${dYear}-${String(dMonth).padStart(2, '0')}-${String(dDay).padStart(2, '0')}`;
 
                 let dayTemps = [];
@@ -200,25 +176,11 @@ async function fetchWeather() {
                 let minT = dayTemps.length > 0 ? Math.round(Math.min(...dayTemps)) : '-';
                 let repIcon = dayCodes.length > 0 ? getWeatherIcon(dayCodes[Math.floor(dayCodes.length / 2)]) : "⛅";
 
-                dailyHtml += `
-                    <div class="weather-cell">
-                        <span class="weather-cell-time">${dMonth}/${dDay}(${dayOfWeekName})</span>
-                        <span class="weather-cell-icon">${repIcon}</span>
-                        <span class="weather-cell-temp">${maxT}°</span>
-                        <span class="weather-cell-subtemp">${minT}°</span>
-                    </div>
-                `;
+                dailyHtml += `<div class="weather-cell"><span class="weather-cell-time">${dMonth}/${dDay}(${dayOfWeekName})</span><span class="weather-cell-icon">${repIcon}</span><span class="weather-cell-temp">${maxT}°</span><span class="weather-cell-subtemp">${minT}°</span></div>`;
             }
             dailyRow.innerHTML = dailyHtml;
         }
-
-    } catch (e) {
-        console.error("날씨 정보 로드 실패", e);
-        const todayRow = document.getElementById('weatherTodayRow');
-        const dailyRow = document.getElementById('weatherDailyRow');
-        if (todayRow) todayRow.innerHTML = `<div style="color:#EF4444; font-size:12px;">로드 실패</div>`;
-        if (dailyRow) dailyRow.innerHTML = `<div style="color:#EF4444; font-size:12px;">로드 실패</div>`;
-    }
+    } catch (e) { console.error(e); }
 }
 
 function getWeatherIcon(code) {
@@ -231,7 +193,6 @@ function getWeatherIcon(code) {
     if (code >= 95) return "⚡";
     return "☁️";
 }
-
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 
@@ -358,11 +319,7 @@ function renderUnconfirmedModal() {
     unconfirmedList.forEach(item => {
         const card = document.createElement('div');
         card.className = 'unconfirmed-card';
-        card.innerHTML = `
-            <div class="unconfirmed-time">⏰ 수신 시각: ${item.time}</div>
-            <div class="unconfirmed-msg">${item.text}</div>
-            <button class="modal-confirm-btn" onclick="confirmItem('${item.id}')">확인 완료</button>
-        `;
+        card.innerHTML = `<div class="unconfirmed-time">⏰ 수신 시각: ${item.time}</div><div class="unconfirmed-msg">${item.text}</div><button class="modal-confirm-btn" onclick="confirmItem('${item.id}')">확인 완료</button>`;
         unconfirmedContainer.appendChild(card);
     });
 };
@@ -388,10 +345,7 @@ function addToChecklist(text, receiveTime, confirmTime) {
     const itemEl = document.createElement('div');
     itemEl.className = 'check-item';
     itemEl.innerHTML = `
-        <div class="item-content">
-            <span>${text}</span>
-            <span class="item-time">수신: ${receiveTime} | 확인: ${confirmTime}</span>
-        </div>
+        <div class="item-content"><span>${text}</span><span class="item-time">수신: ${receiveTime} | 확인: ${confirmTime}</span></div>
         <div class="item-buttons">
             <button class="postit-btn" onclick="createStickyNote('${text}', '${confirmTime}')">📌 포스트잇</button>
             <button class="delete-btn" onclick="this.closest('.check-item').remove(); if(checklistItems.children.length===0) checklistBar.style.display='none';">삭제</button>
@@ -408,7 +362,7 @@ function createStickyNote(text, time) {
 }
 
 const logTriggerBtn = document.getElementById('logTriggerBtn');
-const logPanelBackdrop = document.getElementById('logPanelBackdrop');
+const logPanel = document.getElementById('logPanel');
 const logHideBtn = document.getElementById('logHideBtn');
 const logTotalDeleteBtn = document.getElementById('logTotalDeleteBtn');
 const logReportBtn = document.getElementById('logReportBtn');
@@ -423,17 +377,16 @@ const reportModal = document.getElementById('reportModal');
 const reportCloseBtn = document.getElementById('reportCloseBtn');
 const reportContainer = document.getElementById('reportContainer');
 
-if (logTriggerBtn) logTriggerBtn.onclick = () => { if (logPanelBackdrop) { logPanelBackdrop.classList.add('active'); resetWizard(); } };
-if (logPanelBackdrop) logPanelBackdrop.onclick = () => { logPanelBackdrop.classList.remove('active'); updateMiniBadgeBar(); };
-if (logHideBtn) logHideBtn.onclick = () => { if (logPanelBackdrop) { logPanelBackdrop.classList.remove('active'); updateMiniBadgeBar(); } };
+if (logTriggerBtn) logTriggerBtn.onclick = () => { if (logPanel) { viewingLogsData = null; logPanel.classList.add('active'); resetWizard(); } };
+if (logHideBtn) logHideBtn.onclick = () => { if (logPanel) { viewingLogsData = null; logPanel.classList.remove('active'); updateMiniBadgeBar(); } };
 if (logTotalDeleteBtn) logTotalDeleteBtn.onclick = () => {
     if (confirm("정말 모든 로그 기록을 삭제하시겠습니까?")) {
-        globalLogsData = []; currentFilter = { person: '전체', category: '전체' };
-        renderAllLogsUI(); if (logPanelBackdrop) logPanelBackdrop.classList.remove('active'); updateMiniBadgeBar();
+        globalLogsData = []; viewingLogsData = null; currentFilter = { person: '전체', category: '전체' };
+        renderAllLogsUI(); if (logPanel) logPanel.classList.remove('active'); updateMiniBadgeBar();
     }
 };
 
-window.openLogPanelFromMini = function() { if (logPanelBackdrop) { logPanelBackdrop.classList.add('active'); resetWizard(); } };
+window.openLogPanelFromMini = function() { if (logPanel) { viewingLogsData = null; logPanel.classList.add('active'); resetWizard(); } };
 
 if (logReportBtn) logReportBtn.onclick = () => {
     isChartViewActive = false;
@@ -450,11 +403,12 @@ if (reportCloseBtn) reportCloseBtn.onclick = () => { if (reportModal) reportModa
 
 function updateMiniBadgeBar() {
     if (!logMiniBadgeBar) return;
-    if (globalLogsData.length > 0) {
+    let targetLogs = viewingLogsData || globalLogsData;
+    if (targetLogs.length > 0) {
         logTriggerBtn.style.display = 'none';
         logMiniBadgeBar.style.display = 'flex';
-        miniBadgeCount.innerText = globalLogsData.length;
-        let sortedDesc = [...globalLogsData].sort((a, b) => b.timestamp - a.timestamp);
+        miniBadgeCount.innerText = targetLogs.length;
+        let sortedDesc = [...targetLogs].sort((a, b) => b.timestamp - a.timestamp);
         let top4Texts = sortedDesc.slice(0, 4).map(l => {
             let desc = l.type === 'fever' ? `[${l.person}] ${l.subDetail}` : (l.type === 'temp' ? `[${l.person}] 체온` : (l.type === 'general-med' ? `[${l.person}] 약(${l.subDetail})` : l.text));
             return `${l.timeStr} ${desc}`;
@@ -476,10 +430,7 @@ function resetWizard() {
 function renderFilterWizard() {
     if (!logWizardArea) return;
     logWizardArea.innerHTML = `
-        <div class="wizard-step-header">
-            <div class="wizard-step-title">📊 사람별/종류별 로그 필터</div>
-            <button class="wizard-back-btn" onclick="resetWizard()">⬅️ 입력으로 돌아가기</button>
-        </div>
+        <div class="wizard-step-header"><div class="wizard-step-title">📊 사람별/종류별 로그 필터</div><button class="wizard-back-btn" onclick="resetWizard()">⬅️ 입력으로 돌아가기</button></div>
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
             <div style="color: #93C5FD; font-size: 14px; font-weight: 700;">1) 사람 선택:</div>
             <div class="wizard-pills-container">
@@ -801,7 +752,8 @@ function renderAllLogsUI() {
     if (!logListArea) return;
     logListArea.innerHTML = '';
     
-    let chronologicalLogs = [...globalLogsData].sort((a, b) => a.timestamp - b.timestamp);
+    let targetLogs = viewingLogsData || globalLogsData;
+    let chronologicalLogs = [...targetLogs].sort((a, b) => a.timestamp - b.timestamp);
 
     chronologicalLogs.forEach((log) => {
         let sameMedIntervalStr = '';
@@ -905,7 +857,11 @@ function renderAllLogsUI() {
 }
 
 window.deleteLogItem = function(id) {
-    globalLogsData = globalLogsData.filter(l => l.id != id);
+    if (viewingLogsData) {
+        viewingLogsData = viewingLogsData.filter(l => l.id != id);
+    } else {
+        globalLogsData = globalLogsData.filter(l => l.id != id);
+    }
     renderAllLogsUI();
     updateMiniBadgeBar();
 };
@@ -937,20 +893,25 @@ function appendLogDataDirect(dateObj, text, className, sourceLabel) {
     updateMiniBadgeBar();
 }
 
-window.saveCurrentLogsToStorage = function() {
-    if (globalLogsData.length === 0) { alert("저장할 로그가 없습니다."); return; }
-    let sorted = [...globalLogsData].sort((a, b) => a.timestamp - b.timestamp);
+window.promptAndSaveCurrentLogs = function() {
+    let targetLogs = viewingLogsData || globalLogsData;
+    if (targetLogs.length === 0) { alert("저장할 로그가 없습니다."); return; }
+    
+    let eventTitle = prompt("저장할 이벤트 제목을 입력해 주세요 (예: 윤우 독감 고열 기록):", "윤우윤서 체온 기록");
+    if (!eventTitle) return;
+
+    let sorted = [...targetLogs].sort((a, b) => a.timestamp - b.timestamp);
     let sMonth = sorted[0].timestamp.getMonth() + 1;
     let sDay = sorted[0].timestamp.getDate();
     let eMonth = sorted[sorted.length - 1].timestamp.getMonth() + 1;
     let eDay = sorted[sorted.length - 1].timestamp.getDate();
 
-    let titleStr = `${sMonth}월 ${sDay}일 ~ ${eMonth}월 ${eDay}일, ${globalLogsData.length}건`;
+    let titleStr = `[${eventTitle}] ${sMonth}/${sDay} ~ ${eMonth}/${eDay} (${targetLogs.length}건)`;
     let savedList = JSON.parse(localStorage.getItem('familyHealthSavedLogs') || '[]');
-    savedList.push({ id: 'save_' + Date.now(), title: titleStr, createdAt: new Date().toLocaleString(), logs: globalLogsData });
+    savedList.push({ id: 'save_' + Date.now(), title: titleStr, createdAt: new Date().toLocaleString(), logs: targetLogs });
 
     localStorage.setItem('familyHealthSavedLogs', JSON.stringify(savedList));
-    alert(`[로그 저장 완료]\n"${titleStr}" 제목으로 저장되었습니다.`);
+    alert(`[로그 저장 완료]\n"${titleStr}" 제목으로 안전하게 저장되었습니다.`);
     updateSavedLogsDropdown();
 };
 
@@ -969,7 +930,7 @@ function updateSavedLogsDropdown() {
         opt.innerText = `${item.title} (저장시각: ${item.createdAt})`;
         selectEl.appendChild(opt);
     });
-}
+};
 
 window.loadSelectedSavedLogs = function() {
     const selectEl = document.getElementById('savedLogsSelect');
@@ -977,10 +938,16 @@ window.loadSelectedSavedLogs = function() {
     let savedList = JSON.parse(localStorage.getItem('familyHealthSavedLogs') || '[]');
     let found = savedList.find(i => i.id === selectEl.value);
     if (found) {
-        globalLogsData = found.logs.map(l => ({ ...l, timestamp: new Date(l.timestamp) }));
-        renderAllLogsUI(); updateMiniBadgeBar(); buildTimelineReport();
-        if (isChartViewActive) renderChartForPerson(currentChartPerson);
-        alert(`"${found.title}" 기록을 불러왔습니다!`);
+        viewingLogsData = found.logs.map(l => ({ ...l, timestamp: new Date(l.timestamp) }));
+        
+        isChartViewActive = true;
+        document.getElementById('reportContainer').style.display = 'none';
+        document.getElementById('reportChartContainer').style.display = 'flex';
+        document.getElementById('toggleReportChartBtn').innerText = '📋 타임라인보기';
+        
+        renderChartForPerson(currentChartPerson);
+        updateMiniBadgeBar();
+        alert(`"${found.title}" 기록을 불러와 차트를 즉시 표시합니다! (현재 로그는 안전하게 보호됩니다)`);
     }
 };
 
@@ -1019,38 +986,92 @@ window.toggleReportView = function() {
     }
 };
 
+// --- 📈 실제 시간 간격 X축 스케일, spanGaps: true, 요일 표기, 낮/밤 배경 플러그인 구현 ---
 window.renderChartForPerson = function(personName) {
     currentChartPerson = personName;
     document.getElementById('chartTargetName').innerText = `(현재: ${personName})`;
 
-    let pLogs = globalLogsData.filter(l => l.person === personName && !l.isFuturePending);
+    let activeLogs = viewingLogsData || globalLogsData;
+    let pLogs = activeLogs.filter(l => l.person === personName && !l.isFuturePending);
     pLogs.sort((a, b) => a.timestamp - b.timestamp);
 
-    let labels = [];
-    let tempValues = [];
+    let scatterValues = [];
     let medicationAnnotations = [];
 
-    pLogs.forEach(log => {
-        let timeLabel = `${log.dateStr.slice(0, 5)} ${log.timeStr}`;
-        labels.push(timeLabel);
+    pLogs.forEach((log) => {
+        let timeVal = log.timestamp.getTime();
 
         if (log.type === 'temp') {
-            if (log.subDetail === '정상') tempValues.push(36.5);
-            else tempValues.push(parseFloat(`${log.subDetail}.${log.decimal}`));
+            let tempVal = log.subDetail === '정상' ? 36.5 : parseFloat(`${log.subDetail}.${log.decimal}`);
+            scatterValues.push({ x: timeVal, y: tempVal });
         } else {
-            tempValues.push(null);
+            // 체온이 아닌 투약 등의 이벤트는 X축 타임라인에 맞추되 체온 수치는 null 처리
+            scatterValues.push({ x: timeVal, y: null });
         }
 
         if (log.type === 'fever' || log.type === 'general-med') {
-            medicationAnnotations.push(log.subDetail);
-        } else {
-            medicationAnnotations.push('');
+            medicationAnnotations.push({ time: timeVal, name: log.subDetail });
         }
     });
 
     const canvasCtx = document.getElementById('healthChartCanvas').getContext('2d');
     if (healthChartInstance) healthChartInstance.destroy();
 
+    // 🌙 낮과 밤(오전 6시 ~ 오후 6시: 밝은 하늘색, 야간: 어두운 남색)을 배경에 그려주는 커스텀 플러그인
+    const dayNightBackgroundPlugin = {
+        id: 'dayNightBackgroundPlugin',
+        beforeDraw(chart) {
+            const { ctx, chartArea: { left, right, top, bottom }, scales: { x } } = chart;
+            if (!x) return;
+
+            ctx.save();
+            let minX = x.min;
+            let maxX = x.max;
+
+            // 시간 단위로 하루를 쪼개어 낮/밤 구간 배경 색상 칠하기
+            let curTime = new Date(minX).setHours(0,0,0,0);
+            while (curTime <= maxX) {
+                let dayStart = new Date(curTime).setHours(6,0,0,0);
+                let nightStart = new Date(curTime).setHours(18,0,0,0);
+                let nextDay = curTime + 24 * 3600 * 1000;
+
+                // 1) 야간 구간 (0시 ~ 6시)
+                let n1Start = curTime;
+                let n1End = Math.min(dayStart, maxX);
+                if (n1End > n1Start) {
+                    let x1 = x.getPixelForValue(n1Start);
+                    let x2 = x.getPixelForValue(n1End);
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.45)'; // 어두운 밤
+                    ctx.fillRect(Math.max(left, x1), top, Math.min(right, x2) - Math.max(left, x1), bottom - top);
+                }
+
+                // 2) 주간 구간 (6시 ~ 18시)
+                let dStart = Math.max(dayStart, minX);
+                let dEnd = Math.min(nightStart, maxX);
+                if (dEnd > dStart) {
+                    let x1 = x.getPixelForValue(dStart);
+                    let x2 = x.getPixelForValue(dEnd);
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.08)'; // 밝은 낮
+                    ctx.fillRect(Math.max(left, x1), top, Math.min(right, x2) - Math.max(left, x1), bottom - top);
+                }
+
+                // 3) 야간 구간 (18시 ~ 24시)
+                let n2Start = Math.max(nightStart, minX);
+                let n2End = Math.min(nextDay, maxX);
+                if (n2End > n2Start) {
+                    let x1 = x.getPixelForValue(n2Start);
+                    let x2 = x.getPixelForValue(n2End);
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.45)'; // 어두운 밤
+                    ctx.fillRect(Math.max(left, x1), top, Math.min(right, x2) - Math.max(left, x1), bottom - top);
+                }
+
+                curTime = nextDay;
+            }
+            ctx.restore();
+        }
+    };
+
+    // 투약 이름 표기 플러그인
     const medicationPlugin = {
         id: 'medicationPlugin',
         afterDatasetsDraw(chart) {
@@ -1059,17 +1080,16 @@ window.renderChartForPerson = function(personName) {
             ctx.font = 'bold 13px sans-serif';
             ctx.textAlign = 'center';
 
-            chart.data.datasets[0].data.forEach((val, index) => {
-                let medName = medicationAnnotations[index];
-                if (medName) {
-                    let xCoor = x.getPixelForValue(index);
-                    let yCoor = y.getPixelForValue(40.2); 
+            medicationAnnotations.forEach(ann => {
+                let xCoor = x.getPixelForValue(ann.time);
+                let yCoor = y.getPixelForValue(40.2); 
 
-                    ctx.fillStyle = medName === '부르펜' ? '#EF4444' : (medName === '아세트' ? '#3B82F6' : '#22C55E');
+                if (xCoor >= x.left && xCoor <= x.right) {
+                    ctx.fillStyle = ann.name === '부르펜' ? '#EF4444' : (ann.name === '아세트' ? '#3B82F6' : '#22C55E');
                     ctx.fillRect(xCoor - 28, yCoor - 18, 56, 22);
 
                     ctx.fillStyle = '#FFFFFF';
-                    ctx.fillText(medName, xCoor, yCoor - 3);
+                    ctx.fillText(ann.name, xCoor, yCoor - 3);
                 }
             });
             ctx.restore();
@@ -1079,17 +1099,16 @@ window.renderChartForPerson = function(personName) {
     healthChartInstance = new Chart(canvasCtx, {
         type: 'line',
         data: {
-            labels: labels,
             datasets: [{
-                label: `${personName} 체온 (°C) 및 투약 기록 (24시간제)`,
-                data: tempValues,
+                label: `${personName} 체온 (°C) 및 투약 기록`,
+                data: scatterValues,
                 borderColor: '#38BDF8',
                 backgroundColor: 'rgba(56, 189, 248, 0.2)',
                 borderWidth: 3,
                 pointRadius: 6,
                 pointBackgroundColor: '#FACC15',
                 tension: 0.2,
-                spanGaps: true
+                spanGaps: true // 요청하신 대로 결측 구간 자연스럽게 연결
             }]
         },
         options: {
@@ -1103,25 +1122,42 @@ window.renderChartForPerson = function(personName) {
                     ticks: { color: '#94A3B8', font: { size: 14, weight: 'bold' } }
                 },
                 x: {
+                    type: 'linear', // 실제 시간 간격을 반영하기 위한 linear/time 기반 스케일
+                    position: 'bottom',
                     grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                    ticks: { color: '#94A3B8', font: { size: 12 } }
+                    ticks: {
+                        color: '#94A3B8',
+                        font: { size: 12 },
+                        callback: function(value) {
+                            let d = new Date(value);
+                            let m = String(d.getMonth() + 1).padStart(2, '0');
+                            let day = String(d.getDate()).padStart(2, '0');
+                            let wName = daysOfWeek[d.getDay()];
+                            let h = String(d.getHours()).padStart(2, '0');
+                            let min = String(d.getMinutes()).padStart(2, '0');
+                            return `${m}/${day}(${wName}) ${h}:${min}`;
+                        }
+                    }
                 }
             },
             plugins: {
                 legend: { labels: { color: 'white', font: { size: 16, weight: 'bold' } } },
                 tooltip: {
                     callbacks: {
+                        title: function(context) {
+                            let d = new Date(context[0].parsed.x);
+                            let wName = daysOfWeek[d.getDay()];
+                            return `${d.getMonth() + 1}/${d.getDate()}(${wName}) ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                        },
                         label: function(context) {
-                            let idx = context.dataIndex;
-                            let med = medicationAnnotations[idx];
                             let temp = context.parsed.y;
-                            return `체온: ${temp}°C ${med ? '| 투약: ' + med : ''}`;
+                            return `체온: ${temp !== null ? temp + '°C' : '기록 없음 (투약)'}`;
                         }
                     }
                 }
             }
         },
-        plugins: [medicationPlugin]
+        plugins: [dayNightBackgroundPlugin, medicationPlugin]
     });
 };
 
@@ -1129,13 +1165,14 @@ function buildTimelineReport() {
     if (!reportContainer) return;
     reportContainer.innerHTML = '';
 
-    if (globalLogsData.length === 0) {
+    let activeLogs = viewingLogsData || globalLogsData;
+    if (activeLogs.length === 0) {
         reportContainer.innerHTML = `<div style="color: #94A3B8; font-size: 24px; text-align: center; margin-top: 100px;">기록된 로그가 없습니다. 로그를 먼저 입력해 주세요.</div>`;
         return;
     }
 
     let personsMap = {};
-    let chronologicalLogs = [...globalLogsData].sort((a, b) => a.timestamp - b.timestamp);
+    let chronologicalLogs = [...activeLogs].sort((a, b) => a.timestamp - b.timestamp);
 
     chronologicalLogs.forEach(log => {
         let pName = log.person || '기타';
@@ -1193,7 +1230,7 @@ function buildTimelineReport() {
             `;
         });
 
-        let card = document.createElement('div');
+        let card = document.getElementById('reportTimelineCard') || document.createElement('div');
         card.className = 'report-timeline-card';
         card.innerHTML = `
             <div class="report-person-title">👤 ${person} 상세 타임라인 리포트</div>
