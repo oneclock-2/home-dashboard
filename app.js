@@ -12,7 +12,7 @@ let logState = {
     timeOffset: 0   
 };
 
-// --- 🌟 5일치 윤우·윤서 목업 테스트 데이터 (24시간제 적용) ---
+// --- 🌟 목업 데이터 ---
 function loadMockTestData() {
     const baseTime = new Date();
     const mockItems = [
@@ -65,7 +65,6 @@ function loadMockTestData() {
         });
     });
 }
-
 loadMockTestData();
 
 function updateClock() {
@@ -98,35 +97,141 @@ document.addEventListener('visibilitychange', async () => {
 });
 requestScreenWakeLock();
 
+// --- 🌤️ 날씨 API 연동 (12개 아이콘: 오늘 3시간 간격 6개 + 내일부터 6일치 주간예보) ---
+
+// --- 🌤️ 날씨 API 연동 수정 (12개 아이콘: 오늘 3시간 간격 6개 + 내일부터 6일치 주간예보) ---
+// --- 🌤️ 날씨 API 연동 수정 (URL 파라미터 규격 수정: weathercode -> weather_code) ---
+// --- 🌤️ 날씨 API 연동 최종 수정 (400 에러 해결) ---
+// --- 🌤️ 날씨 API 연동 최종 안정화 버전 (400 에러 원인 차단) ---
+// --- 🌤️ 날씨 API 연동 (경기도 안양시 표기 및 주간예보 요일 추가) ---
 async function fetchWeather() {
     try {
-        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=37.3943&longitude=126.9568&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia/Seoul');
-        const data = await res.json();
-        if (data && data.daily) {
-            const days = data.daily;
-            const todayMax = Math.round(days.temperature_2m_max[0]);
-            const todayMin = Math.round(days.temperature_2m_min[0]);
-            const todayDesc = getWeatherText(days.weathercode[0]);
-            const tomoMax = Math.round(days.temperature_2m_max[1]);
-            const tomoMin = Math.round(days.temperature_2m_min[1]);
-            const tomoDesc = getWeatherText(days.weathercode[1]);
-
-            document.getElementById('weatherToday').innerHTML = `<span class="w-label">오늘</span><span class="w-info">${todayDesc} <br>${todayMin}° / ${todayMax}°</span>`;
-            document.getElementById('weatherTomorrow').innerHTML = `<span class="w-label">내일</span><span class="w-info">${tomoDesc} <br>${tomoMin}° / ${tomoMax}°</span>`;
+        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=37.3943&longitude=126.9568&hourly=temperature_2m,weathercode&timezone=Asia/Seoul');
+        const data = res.ok ? await res.json() : null;
+        
+        if (!data || !data.hourly) {
+            console.error("날씨 데이터를 받아오지 못했습니다.");
+            return;
         }
-    } catch (e) { console.error(e); }
+
+        const times = data.hourly.time;
+        const temps = data.hourly.temperature_2m;
+        const codes = data.hourly.weathercode;
+
+        const now = new Date();
+        const year = now.getFullYear();
+        const monthStr = String(now.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(now.getDate()).padStart(2, '0');
+        const todayDateStr = `${year}-${monthStr}-${dayStr}`;
+
+        // 1) 첫째 줄: 오늘 3시간 간격 (9시, 12시, 15시, 18시, 21시, 0시) 총 6개
+        const todayRow = document.getElementById('weatherTodayRow');
+        if (todayRow) {
+            const targetHours = [9, 12, 15, 18, 21, 0];
+            let todayHtml = '';
+
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tYear = tomorrow.getFullYear();
+            const tMonthStr = String(tomorrow.getMonth() + 1).padStart(2, '0');
+            const tDayStr = String(tomorrow.getDate()).padStart(2, '0');
+            const tomorrowDateStr = `${tYear}-${tMonthStr}-${tDayStr}`;
+
+            targetHours.forEach(h => {
+                let matchedIdx = -1;
+                let searchDate = (h === 0) ? tomorrowDateStr : todayDateStr;
+                let searchHourStr = `T${String(h).padStart(2, '0')}:00`;
+
+                for (let i = 0; i < times.length; i++) {
+                    if (times[i].startsWith(searchDate) && times[i].includes(searchHourStr)) {
+                        matchedIdx = i;
+                        break;
+                    }
+                }
+
+                let timeLabel = h === 0 ? '0시' : `${h}시`;
+                if (matchedIdx !== -1) {
+                    let t = Math.round(temps[matchedIdx]);
+                    let icon = getWeatherIcon(codes[matchedIdx]);
+                    todayHtml += `
+                        <div class="weather-cell">
+                            <span class="weather-cell-time">${timeLabel}</span>
+                            <span class="weather-cell-icon">${icon}</span>
+                            <span class="weather-cell-temp">${t}°</span>
+                        </div>
+                    `;
+                } else {
+                    todayHtml += `
+                        <div class="weather-cell">
+                            <span class="weather-cell-time">${timeLabel}</span>
+                            <span class="weather-cell-icon">🌡️</span>
+                            <span class="weather-cell-temp">-</span>
+                        </div>
+                    `;
+                }
+            });
+            todayRow.innerHTML = todayHtml;
+        }
+
+        // 2) 둘째 줄: 내일부터 총 6일치 주간 예보 (날짜 및 요일 표기 추가)
+        const dailyRow = document.getElementById('weatherDailyRow');
+        if (dailyRow) {
+            let dailyHtml = '';
+            
+            for (let dayOffset = 1; dayOffset <= 6; dayOffset++) {
+                let targetDay = new Date(now);
+                targetDay.setDate(targetDay.getDate() + dayOffset);
+                let dYear = targetDay.getFullYear();
+                let dMonth = targetDay.getMonth() + 1;
+                let dDay = targetDay.getDate();
+                let dayOfWeekName = daysOfWeek[targetDay.getDay()]; // 요일 계산
+                let dDateStr = `${dYear}-${String(dMonth).padStart(2, '0')}-${String(dDay).padStart(2, '0')}`;
+
+                let dayTemps = [];
+                let dayCodes = [];
+                for (let i = 0; i < times.length; i++) {
+                    if (times[i].startsWith(dDateStr)) {
+                        dayTemps.push(temps[i]);
+                        dayCodes.push(codes[i]);
+                    }
+                }
+
+                let maxT = dayTemps.length > 0 ? Math.round(Math.max(...dayTemps)) : '-';
+                let minT = dayTemps.length > 0 ? Math.round(Math.min(...dayTemps)) : '-';
+                let repIcon = dayCodes.length > 0 ? getWeatherIcon(dayCodes[Math.floor(dayCodes.length / 2)]) : "⛅";
+
+                dailyHtml += `
+                    <div class="weather-cell">
+                        <span class="weather-cell-time">${dMonth}/${dDay}(${dayOfWeekName})</span>
+                        <span class="weather-cell-icon">${repIcon}</span>
+                        <span class="weather-cell-temp">${maxT}°</span>
+                        <span class="weather-cell-subtemp">${minT}°</span>
+                    </div>
+                `;
+            }
+            dailyRow.innerHTML = dailyHtml;
+        }
+
+    } catch (e) {
+        console.error("날씨 정보 로드 실패", e);
+        const todayRow = document.getElementById('weatherTodayRow');
+        const dailyRow = document.getElementById('weatherDailyRow');
+        if (todayRow) todayRow.innerHTML = `<div style="color:#EF4444; font-size:12px;">로드 실패</div>`;
+        if (dailyRow) dailyRow.innerHTML = `<div style="color:#EF4444; font-size:12px;">로드 실패</div>`;
+    }
 }
 
-function getWeatherText(code) {
-    if (code === 0) return "☀️ 맑음";
-    if (code >= 1 && code <= 3) return "⛅ 구름많음";
-    if (code >= 45 && code <= 48) return "🌫️ 안개";
-    if (code >= 51 && code <= 67) return "🌧️ 비";
-    if (code >= 71 && code <= 77) return "❄️ 눈";
-    if (code >= 80 && code <= 82) return "🌦️ 소나기";
-    if (code >= 95) return "⚡ 뇌우";
-    return "☁️ 흐림";
+function getWeatherIcon(code) {
+    if (code === 0) return "☀️";
+    if (code >= 1 && code <= 3) return "⛅";
+    if (code >= 45 && code <= 48) return "🌫️";
+    if (code >= 51 && code <= 67) return "🌧️";
+    if (code >= 71 && code <= 77) return "❄️";
+    if (code >= 80 && code <= 82) return "🌦️";
+    if (code >= 95) return "⚡";
+    return "☁️";
 }
+
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 
@@ -535,7 +640,6 @@ function renderWizardStepTempDec() {
 
 window.selectTempDec = function(dec) { logState.decimal = dec; renderWizardStepTime('temp'); };
 
-// --- 24시간제 선택 UI 개편 ---
 function renderWizardStepTime(type) {
     if (!logWizardArea) return;
     let backFunc = 'renderWizardStep1();';
@@ -693,7 +797,6 @@ window.finalizeFutureDone = function(id) {
     }
 };
 
-// --- 로그 목록 UI (날짜 분리형 그룹 렌더링) ---
 function renderAllLogsUI() {
     if (!logListArea) return;
     logListArea.innerHTML = '';
@@ -738,10 +841,8 @@ function renderAllLogsUI() {
         return true;
     });
 
-    // 최신순 정렬
     filteredLogs.sort((a, b) => b.timestamp - a.timestamp);
 
-    // 날짜별로 그룹화
     let groupedByDate = {};
     filteredLogs.forEach(log => {
         if (!groupedByDate[log.dateStr]) groupedByDate[log.dateStr] = [];
@@ -749,7 +850,6 @@ function renderAllLogsUI() {
     });
 
     for (let dateKey in groupedByDate) {
-        // 날짜 그룹 헤더 생성
         const dateHeader = document.createElement('div');
         dateHeader.className = 'log-date-group-header';
         dateHeader.innerHTML = `📅 ${dateKey}`;
@@ -779,7 +879,6 @@ function renderAllLogsUI() {
             }
 
             let intervalHTML = '';
-            // 체온 측정인 경우 '첫 기록' 뱃지 제외 조건 적용
             if (!log.isFuturePending && log.type !== 'temp' && (log.sameMedIntervalStr || log.crossMedIntervalStr)) {
                 intervalHTML = `
                     <div class="interval-badge-group">
@@ -1026,7 +1125,6 @@ window.renderChartForPerson = function(personName) {
     });
 };
 
-// --- 📊 로그전체리포트 생성 로직 (최신 날짜 우측 정렬 반영) ---
 function buildTimelineReport() {
     if (!reportContainer) return;
     reportContainer.innerHTML = '';
@@ -1055,7 +1153,6 @@ function buildTimelineReport() {
         });
 
         let columnsHTML = '';
-        // 최신 날짜가 우측에 오도록 오름차순(과거 -> 최신) 정렬
         let sortedDateKeys = Object.keys(dateMap).sort((a, b) => new Date(a.substring(0, 5)) - new Date(b.substring(0, 5)));
 
         sortedDateKeys.forEach(dateKey => {

@@ -6,7 +6,6 @@
     <title>윤우윤서네 대시보드</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
-    <!-- 📊 Chart.js 라이브러리 연동 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -23,7 +22,7 @@
     <button class="settings-gear-btn" id="settingsGearBtn" title="환경설정">⚙️</button>
     
     <div class="log-trigger-wrapper" id="logTriggerWrapper">
-        <button class="log-trigger-btn" id="logTriggerBtn">💊 해열제/체온 로그</button>
+        <button class="log-trigger-btn" id="logTriggerBtn">💊체온/해열제 로그</button>
         <div class="log-mini-badge-bar" id="logMiniBadgeBar" style="display: none;" onclick="openLogPanelFromMini()">
             <div class="mini-badge-circle" id="miniBadgeCount">0</div>
             <div class="mini-summary-texts" id="miniSummaryTexts">최근 로그 요약...</div>
@@ -35,7 +34,7 @@
     <div class="log-panel-backdrop" id="logPanelBackdrop">
         <div class="log-panel" id="logPanel" onclick="event.stopPropagation()">
             <div class="log-panel-header">
-                <span>📋 해열제/체온 로그</span>
+                <span>📋체온/해열제 로그 로그</span>
                 <div class="log-header-btns">
                     <button class="log-filter-btn" id="logFilterBtn">🔍 사람별 보기</button>
                     <button class="log-report-btn" id="logReportBtn">📊 로그전체리포트</button>
@@ -109,10 +108,8 @@
                 <button class="wizard-pill" style="background: #DC2626; color: white; padding: 8px 14px; font-size: 14px;" onclick="deleteSelectedSavedLog()">삭제</button>
             </div>
 
-            <!-- 타임라인 리포트 뷰 -->
             <div class="report-body" id="reportContainer"></div>
 
-            <!-- 차트 뷰 -->
             <div id="reportChartContainer" style="display: none; flex: 1; flex-direction: column; gap: 16px; overflow-y: auto;">
                 <div style="display: flex; gap: 14px; align-items: center; background: rgba(255,255,255,0.05); padding: 12px 20px; border-radius: 12px;">
                     <span style="color: #FACC15; font-weight: 700; font-size: 16px;">👤 차트 대상 선택:</span>
@@ -127,17 +124,16 @@
         </div>
     </div>
 
-    <div class="top-weather-widget" id="weatherWidget">
-        <div class="widget-title">🌤️ 안양시 날씨</div>
-        <div class="weather-box" id="weatherBox">
-            <div class="weather-day-item" id="weatherToday">
-                <span class="w-label">오늘</span>
-                <span class="w-info">날씨 불러오는 중...</span>
-            </div>
-            <div class="weather-day-item" id="weatherTomorrow">
-                <span class="w-label">내일</span>
-                <span class="w-info">날씨 불러오는 중...</span>
-            </div>
+    <!-- 🌤️ 우측 상단 날씨 위젯 (12개 아이콘: 오늘 3시간 간격 6개 + 향후 6일치 예보 6개) -->
+<div class="top-weather-widget" id="weatherWidget">
+        <div class="widget-section-title">📍 경기도 안양시 날씨 | 오늘 시간대별 (9시~0시)</div>
+        <div class="weather-row-grid" id="weatherTodayRow">
+            <div style="color: #94A3B8; font-size: 14px; padding: 6px;">로드 중...</div>
+        </div>
+
+        <div class="widget-section-title" style="margin-top: 12px;">향후 6일치 주간 예보</div>
+        <div class="weather-row-grid" id="weatherDailyRow">
+            <div style="color: #94A3B8; font-size: 14px; padding: 6px;">로드 중...</div>
         </div>
     </div>
 
