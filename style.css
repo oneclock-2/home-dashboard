@@ -983,5 +983,14 @@ body {
     padding: 2px 4px;
     box-shadow: none !important;
 }
+/* 정중앙 날짜 및 요일 표시 스타일 */
+.center-date {
+    font-size: 32px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+}
 .report-keyword-fever { color: #FCA5A5; font-weight: 800; }
 .report-keyword-temp { color: #7DD3FC; font-weight: 800; }

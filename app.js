@@ -104,12 +104,25 @@ function loadMockTestData() {
 loadMockTestData();
 
 // --- ⏰ 시계 및 예약 체크 ---
+// --- ⏰ 시계 및 날짜, 예약 체크 ---
 function updateClock() {
     const now = new Date();
+    
+    // 🌟 월, 일, 요일 계산
+    const month = now.getMonth() + 1;
+    const date = now.getDate();
+    const dayName = daysOfWeek[now.getDay()];
+    const dateStr = `${month}월 ${date}일 (${dayName})`;
+    
+    const dateEl = document.getElementById('centerDate');
+    if (dateEl) dateEl.innerText = dateStr;
+
+    // 기존 시간 갱신
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const clockEl = document.getElementById('centerClock');
     if (clockEl) clockEl.innerText = `${hours}:${minutes}`;
+    
     checkFutureReminders();
 }
 setInterval(updateClock, 1000);
