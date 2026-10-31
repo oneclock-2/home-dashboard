@@ -437,6 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 viewingLogsData = null;
                 logPanelBackdrop.classList.add('active');
                 resetWizard();
+                updateMiniBadgeBar(); // 🌟 패널 열릴 때 미니바 숨김 즉시 반영
             }
         };
     }
@@ -479,6 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
             viewingLogsData = null;
             logPanelBackdrop.classList.add('active');
             resetWizard();
+            updateMiniBadgeBar(); // 🌟 미니바 열릴 때 숨김 즉시 반영
         }
     };
 
@@ -494,6 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderChartForPerson(currentChartPerson);
             updateSavedLogsDropdown();
             if (reportModal) reportModal.classList.add('active');
+            updateMiniBadgeBar();
         };
     }
 
@@ -516,8 +519,24 @@ const logListArea = document.getElementById('logListArea');
 
 function updateMiniBadgeBar() {
     if (!logMiniBadgeBar) return;
+    
+    // 🌟 리포트 모달이나 로그 패널이 하나라도 열려있으면 무조건 미니바 숨김
+    const reportModal = document.getElementById('reportModal');
+    const logPanelBackdrop = document.getElementById('logPanelBackdrop');
+    
+    const isReportOpen = reportModal && reportModal.classList.contains('active');
+    const isLogPanelOpen = logPanelBackdrop && logPanelBackdrop.classList.contains('active');
+
+    if (isReportOpen || isLogPanelOpen) {
+        logMiniBadgeBar.style.display = 'none';
+        const logTriggerBtn = document.getElementById('logTriggerBtn');
+        if (logTriggerBtn) logTriggerBtn.style.display = 'none';
+        return;
+    }
+
     let targetLogs = viewingLogsData || globalLogsData;
     const logTriggerBtn = document.getElementById('logTriggerBtn');
+    
     if (targetLogs.length > 0) {
         if (logTriggerBtn) logTriggerBtn.style.display = 'none';
         logMiniBadgeBar.style.display = 'flex';
@@ -1137,16 +1156,18 @@ window.renderChartForPerson = function(personName) {
     const canvasCtx = canvasElem.getContext('2d');
     if (healthChartInstance) healthChartInstance.destroy();
 
+    // 🌟 1. 낮/밤 배경 + 38도 초과 위험 구간(y > 38.0) 붉은색 배경 통합 플러그인
     const dayNightBackgroundPlugin = {
         id: 'dayNightBackgroundPlugin',
         beforeDraw(chart) {
-            const { ctx, chartArea: { left, right, top, bottom }, scales: { x } } = chart;
-            if (!x) return;
+            const { ctx, chartArea: { left, right, top, bottom }, scales: { x, y } } = chart;
+            if (!x || !y) return;
 
             ctx.save();
             let minX = x.min;
             let maxX = x.max;
 
+            // (1) 기존 낮/밤 배경 그리기
             let curTime = new Date(minX).setHours(0,0,0,0);
             while (curTime <= maxX) {
                 let dayStart = new Date(curTime).setHours(6,0,0,0);
@@ -1182,7 +1203,44 @@ window.renderChartForPerson = function(personName) {
 
                 curTime = nextDay;
             }
+
+            // (2) 🌟 y > 38.0 초과 위험 구간 붉은색 영역 칠하기
+            let y38Coord = y.getPixelForValue(38.0);
+            if (y38Coord < bottom && y38Coord > top) {
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.18)'; // 👈 세미콜론(;) 오타 제거 및 농도 살짝 보강
+                // 38선(y38Coord)부터 차트 최상단(top)까지 영역 채우기
+                ctx.fillRect(left, top, right - left, Math.max(0, y38Coord - top));
+            }
+
             ctx.restore();
+        }
+    };
+
+    // 🌟 2. y = 38.0 기준 빨간 평행 실선 및 라벨 표시 플러그인
+    const thresholdLinePlugin = {
+        id: 'thresholdLinePlugin',
+        afterDraw(chart) {
+            const { ctx, chartArea: { left, right, top, bottom }, scales: { y } } = chart;
+            if (!y) return;
+
+            let yCoord = y.getPixelForValue(38.0);
+            if (yCoord >= top && yCoord <= bottom) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#EF4444'; // 선명한 레드 컬러
+                ctx.setLineDash([6, 4]); // 점선 형태 또는 실선 (실선 원하시면 setLineDash 지우시면 됩니다)
+                ctx.moveTo(left, yCoord);
+                ctx.lineTo(right, yCoord);
+                ctx.stroke();
+
+                // 38도 경고 텍스트 라벨
+                ctx.fillStyle = '#EF4444';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText('⚠️ 위험 기준선 (38.0°C)', right - 10, yCoord - 6);
+                ctx.restore();
+            }
         }
     };
 
@@ -1271,7 +1329,7 @@ window.renderChartForPerson = function(personName) {
                 }
             }
         },
-        plugins: [dayNightBackgroundPlugin, medicationPlugin]
+        plugins: [dayNightBackgroundPlugin, thresholdLinePlugin, medicationPlugin]
     });
 };
 
