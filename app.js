@@ -13,8 +13,41 @@ let logState = {
     timeOffset: 0   
 };
 
-// --- 🌟 목업 테스트 데이터 ---
+// --- 💾 로컬 저장소(localStorage) 자동 저장 및 불러오기 ---
+function saveToLocalStorage() {
+    try {
+        localStorage.setItem('familyHealthActiveLogs', JSON.stringify(globalLogsData));
+    } catch (e) {
+        console.error("로컬 저장 실패:", e);
+    }
+}
+
+function loadFromLocalStorage() {
+    try {
+        const saved = localStorage.getItem('familyHealthActiveLogs');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                globalLogsData = parsed.map(item => ({
+                    ...item,
+                    timestamp: new Date(item.timestamp) // 문자열로 변환된 날짜 객체 복원
+                }));
+                return true; // 기존에 저장된 유저 데이터가 있음
+            }
+        }
+    } catch (e) {
+        console.error("로컬 데이터 로드 실패:", e);
+    }
+    return false; // 저장된 데이터가 없음
+}
+
+// --- 🌟 목업 테스트 데이터 (최초 1회만 생성) ---
 function loadMockTestData() {
+    // 💡 기존 로컬 저장소 데이터가 이미 있다면 목업 데이터를 불러오지 않음!
+    if (loadFromLocalStorage()) {
+        return;
+    }
+
     const baseTime = new Date();
     const mockItems = [
         { daysAgo: 5, hour: 9, person: '윤우', type: 'temp', subDetail: '39', decimal: '2' },
@@ -65,6 +98,8 @@ function loadMockTestData() {
             rawPushText: `목업로그 ${m.person} | ${m.type}`
         });
     });
+    
+    saveToLocalStorage(); // 목업 데이터 로드 후 최초 저장
 }
 loadMockTestData();
 
@@ -201,7 +236,7 @@ function getWeatherIcon(code) {
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 
-// --- 🌙 절전 모드 밝기 제어 (대기 시간 20초로 연장) ---
+// --- 🌙 절전 모드 밝기 제어 ---
 const brightnessOverlay = document.getElementById('brightnessOverlay');
 let minBrightness = 0.6; 
 let sleepTimer = null;
@@ -215,7 +250,7 @@ function wakeUpScreen() {
     sleepTimer = setTimeout(() => {
         if (brightnessOverlay) brightnessOverlay.style.opacity = minBrightness;
         if (centerClockContainer) centerClockContainer.style.opacity = '0.35';
-    }, 20000); // 20초로 수정
+    }, 20000);
 }
 window.addEventListener('touchstart', wakeUpScreen);
 window.addEventListener('mousemove', wakeUpScreen);
@@ -415,7 +450,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logTotalDeleteBtn) {
         logTotalDeleteBtn.onclick = () => {
             if (confirm("정말 모든 로그 기록을 삭제하시겠습니까?")) {
-                globalLogsData = []; viewingLogsData = null; currentFilter = { person: '전체', category: '전체' };
+                globalLogsData = []; 
+                viewingLogsData = null; 
+                currentFilter = { person: '전체', category: '전체' };
+                saveToLocalStorage(); // 삭제 상태 저장
                 renderAllLogsUI();
                 if (logPanelBackdrop) logPanelBackdrop.classList.remove('active');
                 updateMiniBadgeBar();
@@ -490,7 +528,6 @@ function resetWizard() {
     renderWizardStep1();
 }
 
-// 🌟 로그 필터 영역을 한 줄로 컴팩트하게 간결화
 function renderFilterWizard() {
     if (!logWizardArea) return;
     logWizardArea.innerHTML = `
@@ -660,7 +697,6 @@ function renderWizardStepTempDec() {
 
 window.selectTempDec = function(dec) { logState.decimal = dec; renderWizardStepTime('temp'); };
 
-// 🌟 현재 시간 버튼은 파란색으로 눈에 띄게 강조, 나머지 시간 선택 버튼은 크기를 컴팩트하게 축소
 function renderWizardStepTime(type) {
     if (!logWizardArea) return;
     let backFunc = 'renderWizardStep1();';
@@ -683,10 +719,7 @@ function renderWizardStepTime(type) {
             <button class="wizard-back-btn" onclick="${backFunc}">⬅️ 뒤로</button>
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-            <!-- 현재 시간 버튼 강조 (파란색 배경) -->
             <button class="wizard-pill" style="background: #3B82F6; color: white; font-size: 16px; padding: 12px; text-align: center; border-radius: 10px; width: 100%; border: none; font-weight: 900; box-shadow: 0 4px 12px rgba(59,130,246,0.4);" onclick="finalizeLog('${type}', 0)">⭐ 현재 시간으로 바로 기록</button>
-            
-            <!-- 나머지 시간 선택 버튼들 (크기 축소) -->
             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                 <button class="wizard-pill" style="padding: 6px 10px; font-size: 12px;" onclick="finalizeLog('${type}', 0.5)">30분 전</button>
                 <button class="wizard-pill" style="padding: 6px 10px; font-size: 12px;" onclick="finalizeLog('${type}', 1)">1시간 전</button>
@@ -783,6 +816,7 @@ function processAndSaveLog(type, targetDate) {
         rawPushText: rawPushText
     });
 
+    saveToLocalStorage(); // 🌟 새로운 로그가 추가되면 로컬에 자동 영구 저장!
     renderAllLogsUI();
     updateMiniBadgeBar();
     resetWizard();
@@ -915,6 +949,7 @@ window.deleteLogItem = function(id) {
         viewingLogsData = viewingLogsData.filter(l => l.id != id);
     } else {
         globalLogsData = globalLogsData.filter(l => l.id != id);
+        saveToLocalStorage(); // 🌟 삭제된 상태도 로컬에 즉시 반영
     }
     renderAllLogsUI();
     updateMiniBadgeBar();
@@ -943,6 +978,7 @@ function appendLogDataDirect(dateObj, text, className, sourceLabel) {
         className: className,
         isFuturePending: false
     });
+    saveToLocalStorage(); // 🌟 외부 동기화 로그도 영구 저장
     renderAllLogsUI();
     updateMiniBadgeBar();
 }
@@ -1255,7 +1291,7 @@ function buildTimelineReport() {
             dateMap[log.dateStr].push(log);
         });
 
-        let columnsHTML = {};
+        let columnsHTML = '';
         let sortedDateKeys = Object.keys(dateMap).sort((a, b) => new Date(a.substring(0, 5)) - new Date(b.substring(0, 5)));
 
         sortedDateKeys.forEach(dateKey => {
