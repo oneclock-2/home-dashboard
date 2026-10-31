@@ -145,53 +145,54 @@ body {
     color: #94A3B8;
 }
 
-/* 확인한 알림 사항 바 */
+/* 📋 확인한 알림 사항 바 */
 .top-checklist-bar {
     position: absolute;
     top: 24px;
     left: 24px;
-    background: rgba(15, 23, 42, 0.75);
+    background: rgba(15, 23, 42, 0.85);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    padding: 16px 20px;
-    border-radius: 16px;
+    padding: 16px 22px;
+    border-radius: 18px;
     color: white;
     z-index: 10;
-    max-width: 420px;
+    width: 480px;
     display: none;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
 .checklist-title {
-    font-size: 15px;
-    font-weight: 800;
+    font-size: 16px;
+    font-weight: 900;
     color: #38BDF8;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .checklist-items {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    max-height: 250px;
+    gap: 10px;
+    max-height: 280px;
     overflow-y: auto;
 }
 
 .check-item {
-    background: rgba(30, 41, 59, 0.9);
-    padding: 10px 14px;
-    border-radius: 10px;
+    background: rgba(30, 41, 59, 0.95);
+    padding: 12px 16px;
+    border-radius: 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-size: 14px;
-    border-left: 4px solid #22C55E;
+    border-left: 5px solid #22C55E;
 }
 
 .check-item .item-content {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
+    flex: 1;
 }
 
 .check-item .item-time {
@@ -208,10 +209,10 @@ body {
     background: #EAB308;
     color: black;
     border: none;
-    padding: 5px 10px;
-    border-radius: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 800;
     cursor: pointer;
 }
 
@@ -219,23 +220,23 @@ body {
     background: #EF4444;
     color: white;
     border: none;
-    padding: 5px 10px;
-    border-radius: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 800;
     cursor: pointer;
 }
 
 /* 포스트잇 메모 공간 */
 .sticky-notes-container {
     position: absolute;
-    top: 180px;
+    top: 220px;
     left: 24px;
     display: flex;
     flex-direction: column;
     gap: 12px;
     z-index: 12;
-    max-height: 500px;
+    max-height: 480px;
     overflow-y: auto;
 }
 
@@ -313,12 +314,13 @@ body {
     font-weight: bold;
 }
 
-/* 💊 윤우윤서 체온로그 트리거 및 미니바 (우측 하단 고정) */
+/* 💊 윤우윤서 체온로그 트리거 및 미니바 (태블릿 터치 우선순위 최상단 보장) */
 .log-trigger-wrapper {
     position: absolute;
     bottom: 30px;
     right: 30px;
-    z-index: 15;
+    z-index: 9999;
+    pointer-events: auto !important;
 }
 
 .log-trigger-btn {
@@ -332,6 +334,7 @@ body {
     cursor: pointer;
     box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
     transition: transform 0.2s;
+    pointer-events: auto !important;
 }
 
 .log-trigger-btn:hover {
@@ -385,7 +388,24 @@ body {
     cursor: pointer;
 }
 
-/* 📋 우측 하단 팝업형 로그 패널 (원래 의도하신 우측 하단 토글 구조) */
+/* 우측 하단 로그 패널 백드롭 */
+.log-panel-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: transparent;
+    z-index: 100;
+    display: none;
+    pointer-events: none;
+}
+
+.log-panel-backdrop.active {
+    display: block;
+    pointer-events: auto;
+}
+
 .log-panel {
     position: absolute;
     bottom: 30px;
@@ -394,16 +414,11 @@ body {
     width: 650px;
     height: 75vh;
     border-radius: 24px;
-    display: none;
+    display: flex;
     flex-direction: column;
     padding: 24px;
     box-shadow: 0 25px 60px rgba(0,0,0,0.8);
     border: 1px solid rgba(255,255,255,0.15);
-    z-index: 100;
-}
-
-.log-panel.active {
-    display: flex;
 }
 
 .log-panel-header {
@@ -518,8 +533,35 @@ body {
 .pill-yoonwoo { background: #1E3A8A; color: #93C5FD; border-color: #3B82F6; }
 .pill-yoonseo { background: #831843; color: #F472B6; border-color: #EC4899; }
 .pill-parent { background: #065F46; color: #A7F3D0; border-color: #10B981; }
-.pill-med-ibu { background: #991B1B; color: #FCA5A5; border-color: #EF4444; }
-.pill-med-acet { background: #1E40AF; color: #93C5FD; border-color: #3B82F6; }
+
+/* 💊 해열제 색상 디자인 (아세트: 붉은색 계열, 부르펜: 하얀색 계열) */
+.pill-med-ibu { 
+    background: #FFFFFF !important; 
+    color: #0F172A !important; 
+    border-color: #CBD5E1 !important; 
+    font-weight: 900 !important; 
+}
+.pill-med-acet { 
+    background: #DC2626 !important; 
+    color: #FFFFFF !important; 
+    border-color: #EF4444 !important; 
+    font-weight: 900 !important; 
+}
+
+.med-acet { 
+    background: #DC2626 !important; 
+    color: #FFFFFF !important; 
+    padding: 3px 8px !important; 
+    border-radius: 6px !important; 
+    font-weight: 900 !important; 
+}
+.med-ibu { 
+    background: #FFFFFF !important; 
+    color: #0F172A !important; 
+    padding: 3px 8px !important; 
+    border-radius: 6px !important; 
+    font-weight: 900 !important; 
+}
 
 .log-panel-footer-actions {
     display: flex;
@@ -547,7 +589,6 @@ body {
     padding-right: 4px;
 }
 
-/* 로그 목록 날짜 그룹 구분 스타일 */
 .log-date-group-header {
     background: rgba(59, 130, 246, 0.15);
     color: #93C5FD;
@@ -636,14 +677,32 @@ body {
 }
 .log-item-delete:hover { color: #EF4444; }
 
-/* 긴급 알림 모달 */
+/* 🚨 긴급 알림 강렬한 번쩍번쩍 애니메이션 및 초대형 창 (좌우 최대 1600px 확장) */
+@keyframes emergencyFlashStrobe {
+    0% {
+        background: rgba(15, 23, 42, 0.98);
+        box-shadow: 0 0 140px rgba(239, 68, 68, 1), inset 0 0 100px rgba(239, 68, 68, 0.9);
+        border-color: #EF4444;
+    }
+    50% {
+        background: rgba(220, 38, 38, 0.98);
+        box-shadow: 0 0 200px rgba(255, 255, 255, 1), inset 0 0 150px rgba(255, 255, 255, 0.95);
+        border-color: #F87171;
+    }
+    100% {
+        background: rgba(15, 23, 42, 0.98);
+        box-shadow: 0 0 140px rgba(239, 68, 68, 1), inset 0 0 100px rgba(239, 68, 68, 0.9);
+        border-color: #EF4444;
+    }
+}
+
 .modal-backdrop {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0,0,0,0.85);
+    background: rgba(0,0,0,0.92);
     z-index: 1000;
     display: none;
     justify-content: center;
@@ -656,70 +715,88 @@ body {
 
 .modal-content {
     background: #0F172A;
-    border: 3px solid #EF4444;
-    width: 85%;
-    max-width: 600px;
-    border-radius: 24px;
-    padding: 30px;
+    border: 10px solid #EF4444;
+    width: 96vw;
+    max-width: 1600px;
+    height: 88vh;
+    border-radius: 36px;
+    padding: 40px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: 0 0 50px rgba(239, 68, 68, 0.6);
+    justify-content: space-between;
+    animation: emergencyFlashStrobe 0.6s infinite ease-in-out;
 }
 
 .modal-tag {
     background: #EF4444;
     color: white;
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 18px;
+    padding: 14px 40px;
+    border-radius: 30px;
+    font-size: 28px;
     font-weight: 900;
-    margin-bottom: 20px;
+    letter-spacing: 4px;
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.9);
 }
 
 .unconfirmed-container {
     width: 100%;
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    max-height: 60vh;
+    justify-content: center;
+    gap: 20px;
     overflow-y: auto;
+    padding: 10px 0;
 }
 
 .unconfirmed-card {
-    background: #1E293B;
-    border: 1px solid #475569;
-    border-radius: 16px;
-    padding: 20px;
+    background: rgba(15, 23, 42, 0.98);
+    border: 4px solid rgba(255, 255, 255, 0.4);
+    border-radius: 28px;
+    padding: 36px 48px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .unconfirmed-time {
     color: #94A3B8;
-    font-size: 15px;
+    font-size: 26px;
     font-weight: bold;
 }
 
 .unconfirmed-msg {
-    color: #F8FAFC;
-    font-size: 90px;
+    color: #FFFFFF;
+    font-size: 165px;
     font-weight: 900;
     text-align: center;
-    padding: 10px 0;
+    padding: 20px 0;
+    line-height: 1.15;
+    text-shadow: 0 8px 30px rgba(0, 0, 0, 0.9);
+    word-break: break-all;
+    width: 100%;
 }
 
 .modal-confirm-btn {
     background: #22C55E;
     color: white;
     border: none;
-    padding: 14px;
-    border-radius: 12px;
-    font-size: 18px;
+    width: 100%;
+    padding: 24px;
+    border-radius: 20px;
+    font-size: 32px;
     font-weight: 900;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+    box-shadow: 0 10px 30px rgba(34, 197, 94, 0.7);
+    transition: transform 0.1s;
+}
+.modal-confirm-btn:hover {
+    transform: scale(1.02);
 }
 
 /* 리포트 모달 스타일 */
@@ -862,5 +939,3 @@ body {
 
 .report-keyword-fever { color: #FCA5A5; font-weight: 800; }
 .report-keyword-temp { color: #7DD3FC; font-weight: 800; }
-.med-acet { color: #60A5FA; font-weight: 900; }
-.med-ibu { color: #F87171; font-weight: 900; }
