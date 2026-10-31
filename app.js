@@ -201,7 +201,7 @@ function getWeatherIcon(code) {
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
 
-// --- 🌙 절전 모드 밝기 제어 ---
+// --- 🌙 절전 모드 밝기 제어 (대기 시간 20초로 연장) ---
 const brightnessOverlay = document.getElementById('brightnessOverlay');
 let minBrightness = 0.6; 
 let sleepTimer = null;
@@ -215,7 +215,7 @@ function wakeUpScreen() {
     sleepTimer = setTimeout(() => {
         if (brightnessOverlay) brightnessOverlay.style.opacity = minBrightness;
         if (centerClockContainer) centerClockContainer.style.opacity = '0.35';
-    }, 10000);
+    }, 20000); // 20초로 수정
 }
 window.addEventListener('touchstart', wakeUpScreen);
 window.addEventListener('mousemove', wakeUpScreen);
@@ -372,7 +372,7 @@ function createStickyNote(text, time) {
     stickyNotesContainer.prepend(note);
 }
 
-// --- 💊 윤우윤서 체온로그 패널 및 위자드 제어 (태블릿 터치 보장) ---
+// --- 💊 윤우윤서 체온로그 패널 및 위자드 제어 ---
 document.addEventListener('DOMContentLoaded', () => {
     const logTriggerBtn = document.getElementById('logTriggerBtn');
     const logPanelBackdrop = document.getElementById('logPanelBackdrop');
@@ -490,25 +490,31 @@ function resetWizard() {
     renderWizardStep1();
 }
 
+// 🌟 로그 필터 영역을 한 줄로 컴팩트하게 간결화
 function renderFilterWizard() {
     if (!logWizardArea) return;
     logWizardArea.innerHTML = `
-        <div class="wizard-step-header"><div class="wizard-step-title">📊 사람별/종류별 로그 필터</div><button class="wizard-back-btn" onclick="resetWizard()">⬅️ 입력으로 돌아가기</button></div>
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-            <div style="color: #93C5FD; font-size: 14px; font-weight: 700;">1) 사람 선택:</div>
-            <div class="wizard-pills-container">
-                <button class="wizard-pill ${currentFilter.person === '전체' ? 'pill-med-acet' : ''}" onclick="applyFilterPerson('전체')">전체</button>
-                <button class="wizard-pill pill-yoonwoo" onclick="applyFilterPerson('윤우')">👦 윤우</button>
-                <button class="wizard-pill pill-yoonseo" onclick="applyFilterPerson('윤서')">👧 윤서</button>
-                <button class="wizard-pill pill-parent" onclick="applyFilterPerson('아빠')">👨 아빠</button>
-                <button class="wizard-pill pill-parent" onclick="applyFilterPerson('엄마')">👩 엄마</button>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #93C5FD; font-size: 13px; font-weight: 800;">🔍 로그 필터링</span>
+                <button class="wizard-back-btn" style="padding: 2px 8px; font-size: 11px;" onclick="resetWizard()">입력으로 복귀</button>
             </div>
-            <div style="color: #93C5FD; font-size: 14px; font-weight: 700; margin-top: 6px;">2) 항목 선택:</div>
-            <div class="wizard-pills-container">
-                <button class="wizard-pill ${currentFilter.category === '전체' ? 'pill-med-acet' : ''}" onclick="applyFilterCategory('전체')">전체</button>
-                <button class="wizard-pill pill-med-ibu" onclick="applyFilterCategory('해열제')">💊 해열제</button>
-                <button class="wizard-pill pill-med-acet" onclick="applyFilterCategory('약')">💊 일반약</button>
-                <button class="wizard-pill pill-med-acet" onclick="applyFilterCategory('체온')">🌡️ 체온측정</button>
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <div style="display: flex; gap: 4px; align-items: center;">
+                    <span style="font-size: 12px; color: #94A3B8; font-weight: bold;">사람:</span>
+                    <button class="wizard-pill ${currentFilter.person === '전체' ? 'pill-med-acet' : ''}" style="padding: 4px 8px; font-size: 12px;" onclick="applyFilterPerson('전체')">전체</button>
+                    <button class="wizard-pill pill-yoonwoo" style="padding: 4px 8px; font-size: 12px;" onclick="applyFilterPerson('윤우')">윤우</button>
+                    <button class="wizard-pill pill-yoonseo" style="padding: 4px 8px; font-size: 12px;" onclick="applyFilterPerson('윤서')">윤서</button>
+                    <button class="wizard-pill pill-parent" style="padding: 4px 8px; font-size: 12px;" onclick="applyFilterPerson('아빠')">아빠</button>
+                    <button class="wizard-pill pill-parent" style="padding: 4px 8px; font-size: 12px;" onclick="applyFilterPerson('엄마')">엄마</button>
+                </div>
+                <div style="display: flex; gap: 4px; align-items: center;">
+                    <span style="font-size: 12px; color: #94A3B8; font-weight: bold;">항목:</span>
+                    <button class="wizard-pill ${currentFilter.category === '전체' ? 'pill-med-acet' : ''}" style="padding: 4px 8px; font-size: 12px;" onclick="applyFilterCategory('전체')">전체</button>
+                    <button class="wizard-pill pill-med-ibu" style="padding: 4px 8px; font-size: 12px;" onclick="applyFilterCategory('해열제')">해열제</button>
+                    <button class="wizard-pill pill-med-acet" style="padding: 4px 8px; font-size: 12px;" onclick="applyFilterCategory('약')">일반약</button>
+                    <button class="wizard-pill pill-med-acet" style="padding: 4px 8px; font-size: 12px;" onclick="applyFilterCategory('체온')">체온</button>
+                </div>
             </div>
         </div>
     `;
@@ -654,6 +660,7 @@ function renderWizardStepTempDec() {
 
 window.selectTempDec = function(dec) { logState.decimal = dec; renderWizardStepTime('temp'); };
 
+// 🌟 현재 시간 버튼은 파란색으로 눈에 띄게 강조, 나머지 시간 선택 버튼은 크기를 컴팩트하게 축소
 function renderWizardStepTime(type) {
     if (!logWizardArea) return;
     let backFunc = 'renderWizardStep1();';
@@ -672,29 +679,32 @@ function renderWizardStepTime(type) {
 
     logWizardArea.innerHTML = `
         <div class="wizard-step-header">
-            <div class="wizard-step-title">투약/측정 날짜 및 시간 선택 (24시간제)</div>
+            <div class="wizard-step-title">투약/측정 날짜 및 시간 선택</div>
             <button class="wizard-back-btn" onclick="${backFunc}">⬅️ 뒤로</button>
         </div>
-        <div class="wizard-pills-container">
-            <button class="wizard-pill" onclick="finalizeLog('${type}', 0)">현재 시간</button>
-            <button class="wizard-pill" onclick="finalizeLog('${type}', 0.5)">30분 전</button>
-            <button class="wizard-pill" onclick="finalizeLog('${type}', 1)">1시간 전</button>
-            <button class="wizard-pill" onclick="finalizeLog('${type}', 2)">2시간 전</button>
-            <button class="wizard-pill" style="background: #7F1D1D; color: #FCA5A5; border: 1px solid #EF4444;" onclick="finalizeLog('${type}', -0.5)">30분 후 (예약)</button>
-            <button class="wizard-pill" style="background: #7F1D1D; color: #FCA5A5; border: 1px solid #EF4444;" onclick="finalizeLog('${type}', -1)">1시간 후 (예약)</button>
-            <button class="wizard-pill" style="background: #7F1D1D; color: #FCA5A5; border: 1px solid #EF4444;" onclick="finalizeLog('${type}', -2)">2시간 후 (예약)</button>
-        </div>
-        <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px; background: rgba(255,255,255,0.08); padding: 14px; border-radius: 12px;">
-            <div style="color: #93C5FD; font-size: 15px; font-weight: 700;">📅 날짜 및 24시간 직접 지정:</div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <input type="date" id="customDateInput" value="${defaultDateStr}" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 8px 10px; border-radius: 8px; font-size: 15px; font-weight: bold; flex: 1;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- 현재 시간 버튼 강조 (파란색 배경) -->
+            <button class="wizard-pill" style="background: #3B82F6; color: white; font-size: 16px; padding: 12px; text-align: center; border-radius: 10px; width: 100%; border: none; font-weight: 900; box-shadow: 0 4px 12px rgba(59,130,246,0.4);" onclick="finalizeLog('${type}', 0)">⭐ 현재 시간으로 바로 기록</button>
+            
+            <!-- 나머지 시간 선택 버튼들 (크기 축소) -->
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button class="wizard-pill" style="padding: 6px 10px; font-size: 12px;" onclick="finalizeLog('${type}', 0.5)">30분 전</button>
+                <button class="wizard-pill" style="padding: 6px 10px; font-size: 12px;" onclick="finalizeLog('${type}', 1)">1시간 전</button>
+                <button class="wizard-pill" style="padding: 6px 10px; font-size: 12px;" onclick="finalizeLog('${type}', 2)">2시간 전</button>
+                <button class="wizard-pill" style="background: #7F1D1D; color: #FCA5A5; border: 1px solid #EF4444; padding: 6px 10px; font-size: 12px;" onclick="finalizeLog('${type}', -0.5)">30분 후(예약)</button>
+                <button class="wizard-pill" style="background: #7F1D1D; color: #FCA5A5; border: 1px solid #EF4444; padding: 6px 10px; font-size: 12px;" onclick="finalizeLog('${type}', -1)">1시간 후(예약)</button>
             </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <select id="customHour24Input" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 8px 12px; border-radius: 8px; font-size: 16px; font-weight: bold; flex: 1;">
+        </div>
+
+        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.06); padding: 10px; border-radius: 10px;">
+            <div style="color: #93C5FD; font-size: 13px; font-weight: 700;">📅 직접 날짜/시간 지정:</div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+                <input type="date" id="customDateInput" value="${defaultDateStr}" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 6px 8px; border-radius: 6px; font-size: 13px; font-weight: bold; flex: 1;">
+                <select id="customHour24Input" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 6px 8px; border-radius: 6px; font-size: 13px; font-weight: bold;">
                     ${generate24HourOptions(currentH)}
                 </select>
-                <span style="color: white; font-weight: bold; font-size: 18px;">시</span>
-                <select id="customMinuteInput" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 8px 12px; border-radius: 8px; font-size: 16px; font-weight: bold; flex: 1;">
+                <span style="color: white; font-size: 13px;">시</span>
+                <select id="customMinuteInput" style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 6px 8px; border-radius: 6px; font-size: 13px; font-weight: bold;">
                     <option value="00" ${currentM === 0 ? 'selected' : ''}>00분</option>
                     <option value="10" ${currentM === 10 ? 'selected' : ''}>10분</option>
                     <option value="20" ${currentM === 20 ? 'selected' : ''}>20분</option>
@@ -702,7 +712,7 @@ function renderWizardStepTime(type) {
                     <option value="40" ${currentM === 40 ? 'selected' : ''}>40분</option>
                     <option value="50" ${currentM === 50 ? 'selected' : ''}>50분</option>
                 </select>
-                <button class="wizard-pill" style="padding: 10px 18px; font-size: 15px; background: #22C55E; color: white;" onclick="finalizeLogCustom('${type}')">적용</button>
+                <button class="wizard-pill" style="padding: 6px 12px; font-size: 13px; background: #22C55E; color: white;" onclick="finalizeLogCustom('${type}')">적용</button>
             </div>
         </div>
     `;
@@ -937,7 +947,7 @@ function appendLogDataDirect(dateObj, text, className, sourceLabel) {
     updateMiniBadgeBar();
 }
 
-// --- 💾 저장 및 불러오기 (JSON 파일 백업 포함) ---
+// --- 💾 저장 및 불러오기 ---
 window.promptAndSaveCurrentLogs = function() {
     let targetLogs = viewingLogsData || globalLogsData;
     if (targetLogs.length === 0) { alert("저장할 로그가 없습니다."); return; }
@@ -1022,7 +1032,7 @@ window.deleteSelectedSavedLog = function() {
     }
 };
 
-// --- 📊 리포트 및 꺾은선 차트 (해열제 색상 연동 플러그인 포함) ---
+// --- 📊 리포트 및 꺾은선 차트 ---
 let isChartViewActive = true; 
 let currentChartPerson = '윤우';
 let healthChartInstance = null;
@@ -1245,7 +1255,7 @@ function buildTimelineReport() {
             dateMap[log.dateStr].push(log);
         });
 
-        let columnsHTML = '';
+        let columnsHTML = {};
         let sortedDateKeys = Object.keys(dateMap).sort((a, b) => new Date(a.substring(0, 5)) - new Date(b.substring(0, 5)));
 
         sortedDateKeys.forEach(dateKey => {
