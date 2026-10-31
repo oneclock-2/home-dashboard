@@ -44,7 +44,7 @@ body, html {
 .bg-overlay {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(20, 25, 30, 0.4);
+    background: rgba(10, 15, 20, 0.65); /* 사진 배경 더 어둡게 톤 다운 */
     z-index: 2;
 }
 
@@ -165,7 +165,6 @@ body, html {
     transform: scale(0.95);
 }
 
-/* 미니 요약 바 및 붉은색 원형 뱃지 스타일 */
 .log-mini-badge-bar {
     background: rgba(15, 23, 42, 0.95);
     border: 2px solid rgba(255, 255, 255, 0.2);
@@ -666,25 +665,27 @@ body, html {
     font-weight: 700;
 }
 
+/* 🌙 날씨 위젯 다크 톤 다운 스타일 */
 .top-weather-widget {
     position: absolute;
     top: 20px;
     right: 345px;
     width: 260px;
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(20, 25, 35, 0.8);
     backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     padding: 16px;
     z-index: 10;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .widget-title {
     font-size: 14px;
     font-weight: 700;
-    color: #4A5568;
+    color: #94A3B8;
     margin-bottom: 10px;
-    border-bottom: 2px solid rgba(163, 193, 173, 0.5);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 6px;
 }
 
@@ -698,48 +699,50 @@ body, html {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #F7FAFC;
+    background: rgba(255, 255, 255, 0.05);
     padding: 10px 12px;
     border-radius: 10px;
     border-left: 4px solid #F4A261;
 }
 
-.w-label { font-size: 13px; font-weight: 700; color: #4A5568; }
-.w-info { font-size: 13px; font-weight: 600; color: #2D3748; text-align: right; }
+.w-label { font-size: 13px; font-weight: 700; color: #CBD5E1; }
+.w-info { font-size: 13px; font-weight: 600; color: #F1F5F9; text-align: right; }
 
+/* 🌙 체크리스트 바 다크 톤 다운 스타일 */
 .top-checklist-bar {
     position: absolute;
     top: 20px;
     left: 20px;
     right: 625px;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(20, 25, 35, 0.8);
     backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     padding: 14px 20px;
     z-index: 10;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     display: none;
     max-height: 250px;
     overflow-y: auto;
 }
 
-.checklist-title { font-size: 13px; font-weight: 600; color: #6C7A89; margin-bottom: 8px; }
+.checklist-title { font-size: 13px; font-weight: 600; color: #94A3B8; margin-bottom: 8px; }
 .checklist-items { display: flex; flex-direction: column; gap: 8px; }
 
 .check-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #F0F4F1;
+    background: rgba(255, 255, 255, 0.05);
     padding: 10px 14px;
     border-radius: 10px;
     font-size: 15px;
-    color: #2C3E50;
-    border-left: 4px solid #A3C1AD;
+    color: #F1F5F9;
+    border-left: 4px solid #38BDF8;
 }
 
 .item-content { display: flex; flex-direction: column; gap: 2px; }
-.item-time { font-size: 11px; color: #7F8C8D; }
+.item-time { font-size: 11px; color: #94A3B8; }
 .item-buttons { display: flex; gap: 8px; align-items: center; }
 
 .postit-btn {
@@ -756,17 +759,38 @@ body, html {
 
 .check-item button.delete-btn { background: none; border: none; color: #E07A5F; font-weight: bold; cursor: pointer; font-size: 14px; padding: 4px 8px; }
 
+/* 🌙 화면 정중앙 은은하고 어두운 시계 스타일 (절전모드 시 더 어두워짐) */
+.center-clock-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 4;
+    pointer-events: none;
+    text-align: center;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.center-clock {
+    font-size: 84px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.22); /* 눈에 잘 띄지 않는 어두운 다크 색상 */
+    letter-spacing: 2px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
 .main-idle-content {
     position: absolute;
+    bottom: 40px;
+    left: 40px;
     z-index: 5;
     color: white;
     text-shadow: 0 2px 10px rgba(0,0,0,0.4);
 }
 
-.clock { font-size: 192px; font-weight: 800; letter-spacing: -5px; line-height: 1; }
-.status-badge-wrapper { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 16px; }
-.status-badge { display: inline-block; background: rgba(163, 193, 173, 0.9); color: #12261E; padding: 10px 22px; border-radius: 30px; font-size: 32px; font-weight: 700; backdrop-filter: blur(5px); }
-.dad-credit-large { font-size: 18px; font-weight: 600; color: rgba(255, 255, 255, 0.65); letter-spacing: 0.8px; margin-left: 6px; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
+.status-badge-wrapper { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.status-badge { display: inline-block; background: rgba(100, 116, 139, 0.8); color: #F1F5F9; padding: 8px 18px; border-radius: 30px; font-size: 24px; font-weight: 700; backdrop-filter: blur(5px); }
+.dad-credit-large { font-size: 16px; font-weight: 600; color: rgba(255, 255, 255, 0.5); letter-spacing: 0.8px; margin-left: 6px; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
 
 .modal-backdrop {
     position: absolute;
