@@ -1,6 +1,6 @@
 const NTFY_CHANNEL = "phyjs1073080634"; 
 
-// --- 💡 전역 변수 선언 (에러 방지를 위해 가장 상단에 배치) ---
+// --- 💡 전역 변수 선언 ---
 let globalLogsData = [];
 let currentFilter = { person: '전체', category: '전체' };
 const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -215,7 +215,12 @@ eventSource.onmessage = function(event) {
                     .replace('아세트', '<span class="med-acet">아세트</span>')
                     .replace('부르펜', '<span class="med-ibu">부르펜</span>');
                 
-                appendLogDataDirect(now, formattedMsg, cleanMsg.includes('해열제') ? 'fever-reducer' : (cleanMsg.includes('체온') ? 'temperature' : 'push-log'), '외부폰');
+                let detectedType = 'push-log';
+                if (cleanMsg.includes('해열제')) detectedType = 'fever-reducer';
+                else if (cleanMsg.includes('체온')) detectedType = 'temperature';
+                else if (cleanMsg.includes('약(') || cleanMsg.includes('일반약')) detectedType = 'general-med';
+
+                appendLogDataDirect(now, formattedMsg, detectedType, '외부폰');
                 return;
             }
 
@@ -458,7 +463,7 @@ function updateMiniBadgeBar() {
 
         let sortedDesc = [...globalLogsData].sort((a, b) => b.timestamp - a.timestamp);
         let top4Texts = sortedDesc.slice(0, 4).map(l => {
-            let desc = l.type === 'fever' ? `[${l.person}] ${l.subDetail}` : (l.type === 'temp' ? `[${l.person}] 체온` : l.text);
+            let desc = l.type === 'fever' ? `[${l.person}] ${l.subDetail}` : (l.type === 'temp' ? `[${l.person}] 체온` : (l.type === 'general-med' ? `[${l.person}] 약(${l.subDetail})` : l.text));
             return `${l.dateFormattedStr.slice(6)} ${desc}`;
         });
         miniSummaryTexts.innerText = top4Texts.join(' | ');
@@ -496,6 +501,7 @@ function renderFilterWizard() {
             <div class="wizard-pills-container">
                 <button class="wizard-pill ${currentFilter.category === '전체' ? 'pill-med-acet' : ''}" onclick="applyFilterCategory('전체')">전체</button>
                 <button class="wizard-pill pill-med-ibu" onclick="applyFilterCategory('해열제')">💊 해열제</button>
+                <button class="wizard-pill pill-med-acet" onclick="applyFilterCategory('약')">💊 일반약</button>
                 <button class="wizard-pill pill-med-acet" onclick="applyFilterCategory('체온')">🌡️ 체온측정</button>
             </div>
         </div>
@@ -522,6 +528,7 @@ function renderWizardStep1() {
         </div>
         <div class="wizard-pills-container">
             <button class="wizard-pill accent" onclick="selectCategory('해열제')">💊 해열제 투약</button>
+            <button class="wizard-pill" style="background: #334155; color: #F1F5F9; border: 1px solid #64748B;" onclick="selectCategory('약')">💊 약 복용</button>
             <button class="wizard-pill" onclick="selectCategory('체온')">🌡️ 체온 측정</button>
         </div>
     `;
@@ -529,29 +536,21 @@ function renderWizardStep1() {
 
 window.selectCategory = function(cat) {
     logState.category = cat;
-    renderWizardStep2();
-};
-
-function renderWizardStep2() {
-    if (!logWizardArea) return;
-    logWizardArea.innerHTML = `
-        <div class="wizard-step-header">
-            <div class="wizard-step-title">[${logState.category}] 대상 선택</div>
-            <button class="wizard-back-btn" onclick="renderWizardStep1()">⬅️ 뒤로</button>
-        </div>
-        <div class="wizard-pills-container">
-            <button class="wizard-pill pill-yoonwoo" onclick="selectPerson('윤우')">👦 윤우</button>
-            <button class="wizard-pill pill-yoonseo" onclick="selectPerson('윤서')">👧 윤서</button>
-            <button class="wizard-pill pill-parent" onclick="selectPerson('아빠')">👨 아빠</button>
-            <button class="wizard-pill pill-parent" onclick="selectPerson('엄마')">👩 엄마</button>
-        </div>
-    `;
+    if (cat === '해열제') {
+        renderWizardStepFeverMed();
+    } else if (cat === '약') {
+        renderWizardStepGeneralMed();
+    } else {
+        renderWizardStepTempInt();
+    }
 };
 
 window.selectPerson = function(person) {
     logState.person = person;
     if (logState.category === '해열제') {
         renderWizardStepFeverMed();
+    } else if (logState.category === '약') {
+        renderWizardStepGeneralMed();
     } else {
         renderWizardStepTempInt();
     }
@@ -561,8 +560,33 @@ function renderWizardStepFeverMed() {
     if (!logWizardArea) return;
     logWizardArea.innerHTML = `
         <div class="wizard-step-header">
+            <div class="wizard-step-title">[해열제] 대상 선택</div>
+            <button class="wizard-back-btn" onclick="renderWizardStep1()">⬅️ 뒤로</button>
+        </div>
+        <div class="wizard-pills-container">
+            <button class="wizard-pill pill-yoonwoo" onclick="setPersonAndProceed('윤우', 'fever')">👦 윤우</button>
+            <button class="wizard-pill pill-yoonseo" onclick="setPersonAndProceed('윤서', 'fever')">👧 윤서</button>
+            <button class="wizard-pill pill-parent" onclick="setPersonAndProceed('아빠', 'fever')">👨 아빠</button>
+            <button class="wizard-pill pill-parent" onclick="setPersonAndProceed('엄마', 'fever')">👩 엄마</button>
+        </div>
+    `;
+}
+
+window.setPersonAndProceed = function(person, mode) {
+    logState.person = person;
+    if (mode === 'fever') {
+        renderWizardStepFeverMedChoice();
+    } else if (mode === 'gen') {
+        renderWizardStepGeneralMedChoice();
+    }
+};
+
+function renderWizardStepFeverMedChoice() {
+    if (!logWizardArea) return;
+    logWizardArea.innerHTML = `
+        <div class="wizard-step-header">
             <div class="wizard-step-title">[${logState.person}] 해열제 종류 선택</div>
-            <button class="wizard-back-btn" onclick="renderWizardStep2()">⬅️ 뒤로</button>
+            <button class="wizard-back-btn" onclick="renderWizardStepFeverMed()">⬅️ 뒤로</button>
         </div>
         <div class="wizard-pills-container">
             <button class="wizard-pill pill-med-ibu" onclick="selectFeverMed('부르펜')">부르펜</button>
@@ -576,12 +600,86 @@ window.selectFeverMed = function(med) {
     renderWizardStepTime('fever');
 };
 
+function renderWizardStepGeneralMed() {
+    if (!logWizardArea) return;
+    logWizardArea.innerHTML = `
+        <div class="wizard-step-header">
+            <div class="wizard-step-title">[약 복용] 대상 선택</div>
+            <button class="wizard-back-btn" onclick="renderWizardStep1()">⬅️ 뒤로</button>
+        </div>
+        <div class="wizard-pills-container">
+            <button class="wizard-pill pill-yoonwoo" onclick="setPersonAndProceed('윤우', 'gen')">👦 윤우</button>
+            <button class="wizard-pill pill-yoonseo" onclick="setPersonAndProceed('윤서', 'gen')">👧 윤서</button>
+            <button class="wizard-pill pill-parent" onclick="setPersonAndProceed('아빠', 'gen')">👨 아빠</button>
+            <button class="wizard-pill pill-parent" onclick="setPersonAndProceed('엄마', 'gen')">👩 엄마</button>
+        </div>
+    `;
+}
+
+function renderWizardStepGeneralMedChoice() {
+    if (!logWizardArea) return;
+    logWizardArea.innerHTML = `
+        <div class="wizard-step-header">
+            <div class="wizard-step-title">[${logState.person}] 약 종류 선택 또는 직접 입력</div>
+            <button class="wizard-back-btn" onclick="renderWizardStepGeneralMed()">⬅️ 뒤로</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 6px;">
+            <div class="wizard-pills-container">
+                <button class="wizard-pill" style="background:#334155; color:#F1F5F9; border: 1px solid #64748B;" onclick="selectGeneralMed('항생제')">항생제</button>
+                <button class="wizard-pill" style="background:#334155; color:#F1F5F9; border: 1px solid #64748B;" onclick="selectGeneralMed('유산균/비타민')">유산균/비타민</button>
+                <button class="wizard-pill" style="background:#334155; color:#F1F5F9; border: 1px solid #64748B;" onclick="selectGeneralMed('처방약')">처방약</button>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 6px;">
+                <input type="text" id="customMedInput" placeholder="약 이름 직접 입력..." style="background: #1E293B; color: white; border: 1px solid #64748B; padding: 10px 14px; border-radius: 8px; font-size: 15px; font-weight: bold; flex: 1;">
+                <button class="wizard-pill" style="background: #22C55E; color: white; padding: 10px 20px;" onclick="submitCustomGeneralMed()">선택/입력</button>
+            </div>
+        </div>
+    `;
+}
+
+window.selectGeneralMed = function(medName) {
+    logState.subCategory = medName;
+    renderWizardStepTime('general-med');
+};
+
+window.submitCustomGeneralMed = function() {
+    const inputVal = document.getElementById('customMedInput').value.trim();
+    if (!inputVal) {
+        alert("약 이름을 입력해 주세요.");
+        return;
+    }
+    logState.subCategory = inputVal;
+    renderWizardStepTime('general-med');
+};
+
+
 function renderWizardStepTempInt() {
     if (!logWizardArea) return;
     logWizardArea.innerHTML = `
         <div class="wizard-step-header">
+            <div class="wizard-step-title">[체온 측정] 대상 선택</div>
+            <button class="wizard-back-btn" onclick="renderWizardStep1()">⬅️ 뒤로</button>
+        </div>
+        <div class="wizard-pills-container">
+            <button class="wizard-pill pill-yoonwoo" onclick="setPersonAndTempTarget('윤우')">👦 윤우</button>
+            <button class="wizard-pill pill-yoonseo" onclick="setPersonAndTempTarget('윤서')">👧 윤서</button>
+            <button class="wizard-pill pill-parent" onclick="setPersonAndTempTarget('아빠')">👨 아빠</button>
+            <button class="wizard-pill pill-parent" onclick="setPersonAndTempTarget('엄마')">👩 엄마</button>
+        </div>
+    `;
+}
+
+window.setPersonAndTempTarget = function(person) {
+    logState.person = person;
+    renderWizardStepTempIntChoice();
+};
+
+function renderWizardStepTempIntChoice() {
+    if (!logWizardArea) return;
+    logWizardArea.innerHTML = `
+        <div class="wizard-step-header">
             <div class="wizard-step-title">[${logState.person}] 체온 정수 선택</div>
-            <button class="wizard-back-btn" onclick="renderWizardStep2()">⬅️ 뒤로</button>
+            <button class="wizard-back-btn" onclick="renderWizardStepTempInt()">⬅️ 뒤로</button>
         </div>
         <div class="wizard-pills-container">
             <button class="wizard-pill" onclick="selectTempInt('정상')">정상</button>
@@ -612,7 +710,7 @@ function renderWizardStepTempDec() {
     logWizardArea.innerHTML = `
         <div class="wizard-step-header">
             <div class="wizard-step-title">[${logState.person}] 체온 소수점 선택 (${logState.subCategory}.X)</div>
-            <button class="wizard-back-btn" onclick="renderWizardStepTempInt()">⬅️ 뒤로</button>
+            <button class="wizard-back-btn" onclick="renderWizardStepTempIntChoice()">⬅️ 뒤로</button>
         </div>
         <div class="wizard-pills-container">
             ${btnsHTML}
@@ -627,8 +725,11 @@ window.selectTempDec = function(dec) {
 
 function renderWizardStepTime(type) {
     if (!logWizardArea) return;
-    let backFunc = (type === 'fever') ? 'renderWizardStepFeverMed()' : (logState.subCategory === '정상' ? 'renderWizardStepTempInt()' : 'renderWizardStepTempDec()');
-    
+    let backFunc = 'renderWizardStep1();';
+    if (type === 'fever') backFunc = 'renderWizardStepFeverMedChoice();';
+    else if (type === 'general-med') backFunc = 'renderWizardStepGeneralMedChoice();';
+    else if (type === 'temp') backFunc = logState.subCategory === '정상' ? 'renderWizardStepTempIntChoice();' : 'renderWizardStepTempDec();';
+
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -647,9 +748,13 @@ function renderWizardStepTime(type) {
             <button class="wizard-back-btn" onclick="${backFunc}">⬅️ 뒤로</button>
         </div>
         <div class="wizard-pills-container">
-            <button class="wizard-pill" onclick="finalizeLog('${type}', 0)">현재 시간 (10분 내림)</button>
+            <button class="wizard-pill" onclick="finalizeLog('${type}', 0)">현재 시간</button>
+            <button class="wizard-pill" onclick="finalizeLog('${type}', 0.5)">30분 전</button>
             <button class="wizard-pill" onclick="finalizeLog('${type}', 1)">1시간 전</button>
             <button class="wizard-pill" onclick="finalizeLog('${type}', 2)">2시간 전</button>
+            <button class="wizard-pill" style="background: #7F1D1D; color: #FCA5A5; border: 1px solid #EF4444;" onclick="finalizeLog('${type}', -0.5)">30분 후 (예약)</button>
+            <button class="wizard-pill" style="background: #7F1D1D; color: #FCA5A5; border: 1px solid #EF4444;" onclick="finalizeLog('${type}', -1)">1시간 후 (예약)</button>
+            <button class="wizard-pill" style="background: #7F1D1D; color: #FCA5A5; border: 1px solid #EF4444;" onclick="finalizeLog('${type}', -2)">2시간 후 (예약)</button>
         </div>
         <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px; background: rgba(255,255,255,0.08); padding: 14px; border-radius: 12px;">
             <div style="color: #93C5FD; font-size: 15px; font-weight: 700;">📅 날짜 및 시간 직접 지정:</div>
@@ -711,6 +816,7 @@ function generate12HourOptions(selectedH) {
 }
 
 window.finalizeLog = function(type, offsetHours) {
+    // offsetHours가 음수이면 미래 시간 (예: -0.5는 30분 후)
     let targetDate = new Date(Date.now() - offsetHours * 3600000);
     let m = targetDate.getMinutes();
     let flooredM = Math.floor(m / 10) * 10;
@@ -750,10 +856,18 @@ function processAndSaveLog(type, targetDate) {
     
     const dateFormattedStr = `${m}/${d}(${dayName}) ${hours}:${minutes}`;
 
-    let itemClass = type === 'fever' ? 'fever-reducer' : 'temperature';
+    let itemClass = 'fever-reducer';
+    if (type === 'temp') itemClass = 'temperature';
+    else if (type === 'general-med') itemClass = 'general-med';
+
     let detailVal = logState.subCategory;
 
-    let rawPushText = `로그 ${logState.person} | ${type === 'fever' ? '해열제 투약 (' + detailVal + ')' : '체온 측정 (' + (detailVal === '정상' ? '정상' : detailVal + '.' + logState.decimal + '°C') + ')'} [${dateFormattedStr}] [token:${myClientToken}]`;
+    let typeDescStr = '';
+    if (type === 'fever') typeDescStr = `해열제 투약 (${detailVal})`;
+    else if (type === 'temp') typeDescStr = `체온 측정 (${detailVal === '정상' ? '정상 체온' : detailVal + '.' + logState.decimal + '°C'})`;
+    else if (type === 'general-med') typeDescStr = `약 복용 (${detailVal})`;
+
+    let rawPushText = `로그 ${logState.person} | ${typeDescStr} [${dateFormattedStr}] [token:${myClientToken}]`;
     if (!isFuture) {
         sendNtfyLog(rawPushText);
     }
@@ -857,6 +971,7 @@ function renderAllLogsUI() {
         if (currentFilter.person !== '전체' && log.person !== currentFilter.person) return false;
         if (currentFilter.category !== '전체') {
             if (currentFilter.category === '해열제' && log.type !== 'fever') return false;
+            if (currentFilter.category === '약' && log.type !== 'general-med') return false;
             if (currentFilter.category === '체온' && log.type !== 'temp') return false;
         }
         return true;
@@ -891,6 +1006,9 @@ function renderAllLogsUI() {
         } else if (log.type === 'temp') {
             let tempVal = log.subDetail === '정상' ? '정상 체온' : `${log.subDetail}.${log.decimal}°C`;
             bodyText = `체온 측정 (${tempVal})`;
+        } else if (log.type === 'general-med') {
+            // 약 복용 텍스트를 눈에 잘 띄는 밝은 색상으로 스타일링
+            bodyText = `약 복용 (<span style="color: #93C5FD; font-weight:800;">${log.subDetail}</span>)`;
         } else {
             bodyText = log.text || '';
         }
@@ -1043,6 +1161,8 @@ function buildTimelineReport() {
                 } else if (log.type === 'temp') {
                     let tempVal = log.subDetail === '정상' ? '정상 체온' : `${log.subDetail}.${log.decimal}°C`;
                     contentDesc = `<span class="report-keyword-temp">체온 측정</span> (${tempVal})`;
+                } else if (log.type === 'general-med') {
+                    contentDesc = `<span style="background:#334155; color:#F1F5F9; padding:3px 8px; border-radius:6px; font-weight:800; border:1px solid #64748B;">약 복용</span> (${log.subDetail})`;
                 } else {
                     contentDesc = log.text
                         .replace('아세트', '<span class="med-acet">아세트</span>')

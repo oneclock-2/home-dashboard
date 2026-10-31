@@ -21,9 +21,9 @@
 
     <button class="settings-gear-btn" id="settingsGearBtn" title="환경설정">⚙️</button>
     
-    <!-- 해열제/체온 로그 버튼 및 우측 하단 미니 요약 바 -->
+    <!-- 건강·소통 로그 버튼 및 우측 하단 미니 요약 바 -->
     <div class="log-trigger-wrapper" id="logTriggerWrapper">
-        <button class="log-trigger-btn" id="logTriggerBtn">💊 해열제/체온 로그</button>
+        <button class="log-trigger-btn" id="logTriggerBtn">💊 건강·소통 로그</button>
         <div class="log-mini-badge-bar" id="logMiniBadgeBar" style="display: none;" onclick="openLogPanelFromMini()">
             <div class="mini-badge-circle" id="miniBadgeCount">0</div>
             <div class="mini-summary-texts" id="miniSummaryTexts">최근 로그 요약...</div>
@@ -35,7 +35,7 @@
     <div class="log-panel-backdrop" id="logPanelBackdrop">
         <div class="log-panel" id="logPanel" onclick="event.stopPropagation()">
             <div class="log-panel-header">
-                <span>📋해열제/체온 기록</span>
+                <span>📋 우리집 건강·소통 로그</span>
                 <div class="log-header-btns">
                     <button class="log-filter-btn" id="logFilterBtn">🔍 사람별 보기</button>
                     <button class="log-report-btn" id="logReportBtn">📊 로그전체리포트</button>
@@ -93,7 +93,7 @@
     <div class="report-modal-backdrop" id="reportModal">
         <div class="report-modal-content">
             <div class="report-header">
-                <h2>📊 아이들 해열제 투약 및 체온 날짜별 타임라인 리포트</h2>
+                <h2>📊 아이들 투약 및 체온 날짜별 타임라인 리포트</h2>
                 <button class="report-close-btn" id="reportCloseBtn">✕ 닫기</button>
             </div>
             <div class="report-body" id="reportContainer"></div>

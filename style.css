@@ -623,7 +623,12 @@ body, html {
     padding-bottom: 8px;
     text-align: center;
 }
-
+.log-item.general-med {
+    background: #1E293B;
+    color: #F8FAFC;
+    border: 1px solid #475569;
+    border-left: 6px solid #64748B; /* 어두운 회색 포인트 테두리 */
+}
 .timeline-events-list {
     display: flex;
     flex-direction: column;
