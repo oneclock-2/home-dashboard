@@ -41,7 +41,6 @@ function loadFromLocalStorage() {
     return false; 
 }
 
-// --- 🌟 목업 테스트 데이터 (최초 1회만 생성) ---
 function loadMockTestData() {
     if (loadFromLocalStorage()) {
         return;
@@ -81,6 +80,90 @@ function loadMockTestData() {
     saveToLocalStorage();
 }
 loadMockTestData();
+
+// --- 📝 To Do & Shopping 리스트 관리 로직 ---
+let dashboardTodoList = JSON.parse(localStorage.getItem('dashboardTodoList') || '[]');
+let dashboardShopList = JSON.parse(localStorage.getItem('dashboardShopList') || '[]');
+
+function saveDashboardLists() {
+    localStorage.setItem('dashboardTodoList', JSON.stringify(dashboardTodoList));
+    localStorage.setItem('dashboardShopList', JSON.stringify(dashboardShopList));
+    renderDashboardLists();
+}
+
+function renderDashboardLists() {
+    const todoContainer = document.getElementById('dashTodoList');
+    const shopContainer = document.getElementById('dashShopList');
+    if (!todoContainer || !shopContainer) return;
+
+    todoContainer.innerHTML = '';
+    dashboardTodoList.forEach((item, idx) => {
+        const el = document.createElement('div');
+        el.className = `dash-item-row ${item.completed ? 'completed' : ''}`;
+        el.innerHTML = `
+            <span onclick="toggleDashboardItem('todo', ${idx})" style="cursor:pointer; flex:1;">${item.text}</span>
+            <div class="dash-item-actions">
+                <button onclick="toggleDashboardItem('todo', ${idx})" style="color:#38BDF8;">${item.completed ? '취소' : '완료'}</button>
+                <button onclick="deleteDashboardItem('todo', ${idx})" style="color:#EF4444;">삭제</button>
+            </div>
+        `;
+        todoContainer.appendChild(el);
+    });
+
+    shopContainer.innerHTML = '';
+    dashboardShopList.forEach((item, idx) => {
+        const el = document.createElement('div');
+        el.className = `dash-item-row ${item.completed ? 'completed' : ''}`;
+        el.innerHTML = `
+            <span onclick="toggleDashboardItem('shop', ${idx})" style="cursor:pointer; flex:1;">${item.text}</span>
+            <div class="dash-item-actions">
+                <button onclick="toggleDashboardItem('shop', ${idx})" style="color:#38BDF8;">${item.completed ? '취소' : '완료'}</button>
+                <button onclick="deleteDashboardItem('shop', ${idx})" style="color:#EF4444;">삭제</button>
+            </div>
+        `;
+        shopContainer.appendChild(el);
+    });
+}
+
+window.addDashboardItem = function(type, customText = null) {
+    let inputElem = document.getElementById(type === 'todo' ? 'dashTodoInput' : 'dashShopInput');
+    let text = customText || (inputElem ? inputElem.value.trim() : '');
+    if (!text) {
+        if (!customText) alert("내용을 입력해 주세요.");
+        return;
+    }
+    const newItem = { text: text, completed: false };
+    if (type === 'todo') {
+        dashboardTodoList.unshift(newItem);
+        if (inputElem) inputElem.value = '';
+    } else {
+        dashboardShopList.unshift(newItem);
+        if (inputElem) inputElem.value = '';
+    }
+    saveDashboardLists();
+};
+
+window.toggleDashboardItem = function(type, idx) {
+    if (type === 'todo') {
+        dashboardTodoList[idx].completed = !dashboardTodoList[idx].completed;
+    } else {
+        dashboardShopList[idx].completed = !dashboardShopList[idx].completed;
+    }
+    saveDashboardLists();
+};
+
+window.deleteDashboardItem = function(type, idx) {
+    if (type === 'todo') {
+        dashboardTodoList.splice(idx, 1);
+    } else {
+        dashboardShopList.splice(idx, 1);
+    }
+    saveDashboardLists();
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    renderDashboardLists();
+});
 
 // --- ⏰ 시계 및 날짜, 예약 체크 ---
 function updateClock() {
@@ -262,7 +345,7 @@ window.changeAlertFontSize = function(sizeVal) {
     alert(`알림 글씨 크기가 변경되었습니다.`);
 };
 
-window.updateBrightnessLevel = function(val) { minBrightness = parseFloat(val); if (brightnessOverlay) brightnessOverlay.style.opacity = minBrightness; };
+window.updateBrightnessLevel = function(val) { minBrightness = parseFloat(val); if (brightnessOverlay) brightnessOverlay.style.opacity = minBrightness; if (typeof applyFrameBrightness === 'function') applyFrameBrightness(); };
 window.updateAlertVolume = function(val) { alertVolumeMultiplier = parseFloat(val); const lbl = document.getElementById('volumeLabel'); if (lbl) lbl.innerText = `${Math.round(alertVolumeMultiplier * 100)}%`; };
 
 function playAlertSound() {
@@ -284,7 +367,7 @@ function playAlertSound() {
     }
 }
 
-// --- 🚨 [핵심 개선] 실시간 푸시 알림 (SSE + 주기적 폴링 이중 안전장치) ---
+// --- 🚨 [푸시 알림 진단 및 수신 로직] ---
 let unconfirmedList = []; 
 let reminderTimeout = null;
 let reminderStep = 0;
@@ -298,7 +381,7 @@ const stickyNotesContainer = document.getElementById('stickyNotesContainer');
 const myClientToken = 'tablet-' + Math.random().toString(36).substring(2, 9);
 
 let eventSource = null;
-let processedMessageIds = new Set(); // 중복 수신 방지 세트
+let processedMessageIds = new Set(); 
 
 function handleIncomingMessage(msgData) {
     try {
@@ -306,7 +389,6 @@ function handleIncomingMessage(msgData) {
         const msgText = msgData.message;
         const msgId = msgData.id || (msgText + (msgData.time || ''));
 
-        // 중복 수신된 메시지면 무시
         if (processedMessageIds.has(msgId)) return;
         processedMessageIds.add(msgId);
         if (processedMessageIds.size > 200) {
@@ -333,58 +415,60 @@ function handleIncomingMessage(msgData) {
     }
 }
 
-// 1. SSE 실시간 스트림 연결
+
+// --- 🚨 ntfy 실시간 푸시 수신 로직 ---
+
+
 function initNtfyEventListener() {
+
+    // 기존 연결 정리
     if (eventSource) {
-        try { eventSource.close(); } catch(e) {}
+        eventSource.close();
     }
 
-    eventSource = new EventSource(`https://ntfy.sh/${NTFY_CHANNEL}/sse`);
+    // SSE 실시간 연결
+    eventSource = new EventSource(
+        `https://ntfy.sh/${NTFY_CHANNEL}/sse`
+    );
+
+    eventSource.onopen = function() {
+        console.log("✅ ntfy 실시간 연결 성공");
+    };
 
     eventSource.onmessage = function(event) {
         try {
             if (!event || !event.data) return;
+
             const data = JSON.parse(event.data);
+
             if (data.event === 'message' && data.message) {
                 handleIncomingMessage(data);
             }
-        } catch (e) {}
-    };
 
-    eventSource.onerror = function() {
-        try { eventSource.close(); } catch(e) {}
-        setTimeout(initNtfyEventListener, 5000);
-    };
-}
-
-// 2. [이중 안전장치] 15초마다 ntfy JSON API를 직접 조회하는 폴링 (SSE가 죽어도 알림 보장)
-async function pollNtfyMessages() {
-    try {
-        const res = await fetch(`https://ntfy.sh/${NTFY_CHANNEL}/json?limit=5`);
-        if (res.ok) {
-            const text = await res.text();
-            const lines = text.trim().split('\n');
-            lines.forEach(line => {
-                if (!line) return;
-                try {
-                    const data = JSON.parse(line);
-                    if (data.event === 'message' && data.message) {
-                        handleIncomingMessage(data);
-                    }
-                } catch (err) {}
-            });
+        } catch (e) {
+            console.error("ntfy 메시지 파싱 오류:", e);
         }
-    } catch (e) {}
+    };
+
+    // EventSource 자체 재연결 기능 사용
+    // close()하거나 별도 setTimeout 재연결하지 않음
+    eventSource.onerror = function() {
+        console.warn("⚠️ ntfy 연결 끊김. 자동 재연결 대기 중...");
+    };
 }
 
-// 초기 실행 및 폴링 루프 시작 (15초 간격)
+// 최초 연결
 initNtfyEventListener();
-setInterval(pollNtfyMessages, 15000);
+
+// 기존 pollNtfyMessages() 함수와
+// setInterval(pollNtfyMessages, 15000)는 삭제
+
 
 function triggerEmergencyAlert(messageText) {
     const now = new Date();
     const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     unconfirmedList.push({ id: Date.now() + Math.random(), text: messageText, time: timeString });
+    dismissPhotoFrame(); // 긴급 알림이 오면 액자부터 걷어냄
     playAlertSound();
     renderUnconfirmedModal();
     if (modal) modal.classList.add('active');
@@ -413,7 +497,15 @@ function renderUnconfirmedModal() {
     unconfirmedList.forEach(item => {
         const card = document.createElement('div');
         card.className = 'unconfirmed-card';
-        card.innerHTML = `<div class="unconfirmed-time">⏰ 수신 시각: ${item.time}</div><div class="unconfirmed-msg">${item.text}</div><button class="modal-confirm-btn" onclick="confirmItem('${item.id}')">확인 완료</button>`;
+        card.innerHTML = `
+            <div class="unconfirmed-time">⏰ 수신 시각: ${item.time}</div>
+            <div class="unconfirmed-msg">${item.text}</div>
+            <div class="modal-actions-row">
+                <button class="modal-confirm-btn" onclick="confirmItem('${item.id}')">확인 완료</button>
+                <button class="modal-todo-btn" onclick="sendAlertToDashboardList('todo', '${item.id}', '${item.text}')">📝 To Do 추가</button>
+                <button class="modal-shop-btn" onclick="sendAlertToDashboardList('shop', '${item.id}', '${item.text}')">🛒 Shopping 추가</button>
+            </div>
+        `;
         unconfirmedContainer.appendChild(card);
     });
 };
@@ -430,10 +522,17 @@ window.confirmItem = function(id) {
     }
 };
 
+window.sendAlertToDashboardList = function(listType, id, text) {
+    addDashboardItem(listType, text);
+    alert(`"${text}" 내용이 대시보드 ${listType === 'todo' ? 'To Do List' : 'Shopping List'}에 추가되었습니다!`);
+    confirmItem(id);
+};
+
 function sendNtfyResponse(text, time) {
     fetch(`https://ntfy.sh/${NTFY_CHANNEL}`, { method: 'POST', body: `[확인완료] "${text}" (수신시각: ${time}) [token:${myClientToken}]` }).catch(err => { console.log(err); });
 }
 
+// 🌟 확인한 알림 사항이 생기면 좌측상단 제일 위에 표시되도록 바를 노출하고 최상단에 렌더링
 function addToChecklist(text, receiveTime, confirmTime) {
     if (checklistBar) checklistBar.style.display = 'block';
     if (!checklistItems) return;
@@ -446,7 +545,7 @@ function addToChecklist(text, receiveTime, confirmTime) {
             <button class="delete-btn" onclick="this.closest('.check-item').remove(); if(checklistItems.children.length===0 && checklistBar) checklistBar.style.display='none';">삭제</button>
         </div>
     `;
-    checklistItems.prepend(itemEl);
+    checklistItems.prepend(itemEl); // 최상단에 추가
 }
 
 function createStickyNote(text, time) {
@@ -1051,7 +1150,6 @@ function appendLogDataDirect(dateObj, text, className, sourceLabel) {
     updateMiniBadgeBar();
 }
 
-// --- 💾 저장 및 불러오기 ---
 window.promptAndSaveCurrentLogs = function() {
     let targetLogs = viewingLogsData || globalLogsData;
     if (targetLogs.length === 0) { alert("저장할 로그가 없습니다."); return; }
@@ -1136,7 +1234,6 @@ window.deleteSelectedSavedLog = function() {
     }
 };
 
-// --- 📊 리포트 및 꺾은선 차트 (38도 선 및 붉은 배경 포함) ---
 let isChartViewActive = true; 
 let currentChartPerson = '윤우';
 let healthChartInstance = null;
@@ -1238,7 +1335,6 @@ window.renderChartForPerson = function(personName) {
                 curTime = nextDay;
             }
 
-            // 38도 초과 영역 붉은색 경고 배경
             let y38Coord = y.getPixelForValue(38.0);
             if (y38Coord < bottom && y38Coord > top) {
                 ctx.fillStyle = 'rgba(239, 68, 68, 0.18)';
@@ -1443,3 +1539,87 @@ function buildTimelineReport() {
         reportContainer.appendChild(card);
     }
 }
+
+// --- 🖼️ 액자 모드 (30초간 터치 없으면 전체화면 사진, 30분마다 photo3 ↔ photo4 교체) ---
+const FRAME_IDLE_MS = 15 * 1000;
+const FRAME_PHOTOS = ['photo3.jpg', 'photo4.jpg'];
+const FRAME_SWAP_MS = 30 * 60 * 1000;
+const photoFrame = document.getElementById('photoFrame');
+const photoFrameDim = document.getElementById('photoFrameDim');
+const photoFrameCredit = document.getElementById('photoFrameCredit');
+let frameTimer = null;
+const framePhotoLoaded = FRAME_PHOTOS.map(() => false);
+let frameShownIndex = -1;
+
+// 사진 미리 불러오기 (캐시에 올려두면 전환 시 깜빡임 없음)
+FRAME_PHOTOS.forEach((src, i) => {
+    const img = new Image();
+    img.onload = () => { framePhotoLoaded[i] = true; updateFramePhoto(); };
+    img.onerror = () => console.warn(`⚠️ 액자 사진(${src})을 불러오지 못했습니다. 파일명/경로를 확인하세요.`);
+    img.src = src;
+});
+
+// 하단 크레딧 문구: 대시보드에 있는 문구를 그대로 복사 (index.html을 고치면 액자에도 자동 반영)
+if (photoFrameCredit) {
+    const dad = document.querySelector('.dad-credit-large');
+    const ver = document.querySelector('.version-info');
+    photoFrameCredit.innerHTML = (dad ? dad.outerHTML : '') + (ver ? ver.outerHTML : '');
+}
+
+// 환경설정의 '절전 모드 최소 밝기'를 액자에도 적용
+function applyFrameBrightness() {
+    if (photoFrameDim) photoFrameDim.style.opacity = minBrightness;
+}
+
+// 현재 시각 기준 30분 단위로 사진 선택 (정각~29분: photo3, 30~59분: photo4 ...)
+function getFramePhotoIndex() {
+    return Math.floor(Date.now() / FRAME_SWAP_MS) % FRAME_PHOTOS.length;
+}
+
+function updateFramePhoto() {
+    if (!photoFrame) return;
+    let idx = getFramePhotoIndex();
+    if (!framePhotoLoaded[idx]) idx = framePhotoLoaded.findIndex(Boolean); // 한쪽이 없으면 있는 사진 사용
+    if (idx < 0 || idx === frameShownIndex) return;
+    photoFrame.style.backgroundImage = `url('${FRAME_PHOTOS[idx]}')`;
+    frameShownIndex = idx;
+}
+setInterval(updateFramePhoto, 30 * 1000); // 30분 경계를 지나면 자동 교체
+
+function showPhotoFrame() {
+    const alertModal = document.getElementById('messageModal');
+    const alertActive = (alertModal && alertModal.classList.contains('active')) ||
+                        (typeof unconfirmedList !== 'undefined' && unconfirmedList.length > 0);
+    // 사진이 아직 없거나, 확인 안 한 긴급 알림이 있으면 액자를 켜지 않고 타이머만 다시 시작
+    if (!photoFrame || !framePhotoLoaded.some(Boolean) || alertActive) { resetFrameTimer(); return; }
+    updateFramePhoto();
+    applyFrameBrightness();
+    photoFrame.classList.add('active');
+}
+
+function dismissPhotoFrame() {
+    const frame = document.getElementById('photoFrame');
+    if (frame) frame.classList.remove('active');
+}
+
+function resetFrameTimer() {
+    clearTimeout(frameTimer);
+    frameTimer = setTimeout(showPhotoFrame, FRAME_IDLE_MS);
+}
+
+function onFrameUserActivity() {
+    dismissPhotoFrame();
+    resetFrameTimer();
+}
+
+['touchstart', 'pointerdown', 'mousedown', 'mousemove', 'keydown', 'wheel'].forEach(evt =>
+    window.addEventListener(evt, onFrameUserActivity, { passive: true })
+);
+
+// 액자를 닫는 터치가 아래 버튼까지 눌리지 않도록 클릭은 액자에서 차단
+if (photoFrame) {
+    photoFrame.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); }, true);
+}
+
+applyFrameBrightness();
+resetFrameTimer();
