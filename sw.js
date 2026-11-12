@@ -1,6 +1,6 @@
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open('home-dash-v1').then((cache) => {
+    caches.open('home-dash-v3').then((cache) => {
       return cache.addAll(['/', '/index.html', '/style.css', '/app.js', '/manifest.json']);
     })
   );

@@ -1143,7 +1143,8 @@ body {
     inset: 0;
     z-index: 10000;
     background-color: #000;
-    background-size: contain;
+    background-size: cover;
+    /* background-size: contain; */
     background-position: center;
     background-repeat: no-repeat;
     opacity: 0;
@@ -1176,4 +1177,39 @@ body {
     opacity: 0.6;
     pointer-events: none;
     transition: opacity 0.5s ease;
+}
+
+
+/* 📱 중앙 시계 아래 휴대폰 찾기 버튼 */
+.phone-finder-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    margin-top: 22px;
+    pointer-events: auto;
+}
+
+.phone-finder-btn {
+    min-width: 190px;
+    padding: 13px 22px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 16px;
+    color: #fff;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.phone-finder-btn:active { transform: scale(0.96); }
+.phone-finder-btn:disabled { opacity: 0.72; cursor: wait; }
+.dad-phone-btn { background: rgba(37, 99, 235, 0.88); }
+.mom-phone-btn { background: rgba(219, 39, 119, 0.88); }
+
+@media (max-width: 700px) {
+    .phone-finder-controls { gap: 8px; margin-top: 14px; }
+    .phone-finder-btn { min-width: 0; padding: 11px 14px; font-size: 15px; }
 }

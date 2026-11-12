@@ -1,5 +1,51 @@
 const NTFY_CHANNEL = "phyjs1073080634"; 
 
+// --- 📱 휴대폰 찾기: 각 휴대폰 전용 ntfy 토픽으로 호출 ---
+const PHONE_FIND_TOPICS = {
+    dad: "phyjs1073080634-1",
+    mom: "phyjs1073080634-2"
+};
+
+window.findPhone = async function (who) {
+    const topic = PHONE_FIND_TOPICS[who];
+    const button = document.getElementById(who === 'dad' ? 'findDadPhoneBtn' : 'findMomPhoneBtn');
+    const message = who === 'dad' ? 'PHONE_FIND_DAD' : 'PHONE_FIND_MOM';
+    const originalText = who === 'dad' ? '👨 폰 찾기' : '👩 폰 찾기';
+
+    if (!topic || !button || button.disabled) return;
+
+    button.disabled = true;
+    button.textContent = '전송 중...';
+
+    try {
+        // 단순 text/plain POST로 전송해 커스텀 헤더 preflight 영향을 피함.
+        // 매번 고유한 시각을 붙여 연속 호출도 구분할 수 있게 함.
+        const payload = `${message} | ${new Date().toISOString()}`;
+        const response = await fetch(`https://ntfy.sh/${topic}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+            body: payload,
+            cache: 'no-store'
+        });
+
+        const responseText = await response.text();
+        if (!response.ok) {
+            throw new Error(`ntfy 응답 오류: HTTP ${response.status} ${responseText}`);
+        }
+
+        console.info(`휴대폰 찾기 전송 성공 (${topic}):`, responseText);
+        button.textContent = '🔔 호출 전송 완료';
+    } catch (error) {
+        console.error(`휴대폰 찾기 전송 실패 (${topic}):`, error);
+        button.textContent = '전송 실패 - 다시 시도';
+    } finally {
+        setTimeout(() => {
+            button.textContent = originalText;
+            button.disabled = false;
+        }, 2200);
+    }
+};
+
 let globalLogsData = [];
 let viewingLogsData = null; 
 let currentFilter = { person: '전체', category: '전체' };
